@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ article.title | default('Untitled Article', true) }} - DataCraft Portfolio</title>
+    <meta name="description" content="{{ article.description | default('An insightful article from DataCraft Portfolio', true) }}" />
+    <meta name="author" content="Timothee Nkwar" />
+    <meta name="keywords" content="{% for tag in article.tags | default([], true) %}{{ tag }}{% if not loop.last %}, {% endif %}{% endfor %}" />
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="{{ article.title | default('Untitled Article', true) }}" />
+    <meta property="og:description" content="{{ article.description | default('An insightful article from DataCraft Portfolio', true) }}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="{{ request.url }}" />
+    <meta property="og:site_name" content="DataCraft Portfolio" />
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="{{ article.title | default('Untitled Article', true) }}" />
+    <meta name="twitter:description" content="{{ article.description | default('An insightful article from DataCraft Portfolio', true) }}" />
+
+    <!-- Favicon and Icons -->
+    <link rel="icon" href="{{ url_for('static', filename='images/icon.png') }}" />
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/icon.png') }}" />
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
+
+    <!-- DNS prefetch for external resources -->
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com" />
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css" integrity="sha512-mu8pX7vSFrU8n2wmV41kIwxNaK3G3HA9iY4um0O6KQKkb9gL8oL2w2G5qmx0sXb3qW1y3gq1gsp4Z3v2M1W3Rw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- Inline CSS for A1 formatting with smaller content -->
+    <style>
+        /* A1 page layout */
+        .article-container {
+            font-family: 'Calibri', 'Times New Roman', serif;
+            width: 594mm; /* A1 width */
+            min-height: 841mm; /* A1 height */
+            margin: 2rem auto;
+            padding: 20mm; /* Reduced for smaller content */
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            color: var(--text-primary, #111827);
+            line-height: 1.6; /* Tighter for smaller content */
+        }
+        .article-header {
+            text-align: center;
+            margin-bottom: 1.5rem; /* Reduced */
+            animation: fadeIn 0.5s ease-out;
+        }
+        .article-header h1 {
+            font-size: 2rem; /* Smaller for A1 */
+            font-weight: 700;
+            color: var(--primary, #2563eb);
+            margin: 0.5rem 0;
+            line-height: 1.2;
+        }
+        .article-meta {
+            font-size: 0.75rem; /* Smaller for A1 */
+            color: var(--text-secondary, #6b7280);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .article-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem; /* Reduced */
+            justify-content: center;
+        }
+        .article-tags span[role="listitem"] {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem; /* Smaller for A1 */
+            border-radius: 0.25rem;
+            transition: background-color 0.2s ease-out;
+        }
+        .article-tags span:hover {
+            background-color: var(--primary-100, #dbeafe);
+            cursor: pointer;
+        }
+        .prose {
+            font-size: 1rem; /* Smaller for A1 readability */
+            line-height: 1.6;
+            text-align: justify;
+            hyphens: auto;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .prose p {
+            margin: 0 0 1rem 0; /* Reduced */
+        }
+        .prose h1, .prose h2, .prose h3 {
+            font-weight: 600;
+            color: var(--primary, #2563eb);
+            margin: 1rem 0; /* Reduced */
+        }
+        .prose h1 { font-size: 2rem; }
+        .prose h2 { font-size: 1.5rem; }
+        .prose h3 { font-size: 1.25rem; }
+        .prose pre {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem; /* Reduced for A1 */
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem; /* Smaller for A1 */
+            margin: 1rem 0; /* Reduced */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .prose code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem; /* Smaller for A1 */
+        }
+        .article-footer {
+            margin-top: 2rem; /* Reduced */
+            padding-top: 1rem;
+            border-top: 1px solid var(--surface-200, #e5e7eb);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .article-footer .social-share {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .article-footer button {
+            padding: 0.5rem 1rem; /* Reduced */
+            font-size: 0.75rem; /* Smaller for A1 */
+            border-radius: 0.25rem;
+            transition: all 0.2s ease-out;
+        }
+        .reading-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background-color: var(--primary, #2563eb);
+            z-index: 1000;
+            transition: width 0.2s ease-out;
+            width: 0;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 768px) {
+            .article-container {
+                width: 90vw;
+                min-height: auto;
+                padding: 1rem; /* Reduced for mobile */
+            }
+            .article-header h1 {
+                font-size: 1.5rem;
+            }
+            .prose {
+                font-size: 0.875rem;
+            }
+            .prose h2 { font-size: 1.25rem; }
+            .prose h3 { font-size: 1rem; }
+            .prose pre, .prose code {
+                font-size: 0.75rem;
+            }
+            .article-footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .article-meta, .article-tags span[role="listitem"], .article-footer button {
+                font-size: 0.625rem;
+            }
+        }
+        @media print {
+            .article-container {
+                width: 594mm;
+                min-height: 841mm;
+                margin: 0;
+                padding: 20mm;
+                box-shadow: none;
+            }
+            .reading-progress, header, footer {
+                display: none;
+            }
+        }
+    </style>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "{{ article.title | default('Untitled Article', true) }}",
+        "description": "{{ article.description | default('An insightful article from DataCraft Portfolio', true) }}",
+        "author": {
+            "@type": "Person",
+            "name": "Timothee Nkwar"
+        },
+        "datePublished": "{{ article.timestamp | default('2025-01-01T00:00:00Z', true) }}",
+        "dateModified": "{{ article.timestamp | default('2025-01-01T00:00:00Z', true) }}",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "{{ request.url }}"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "DataCraft Portfolio",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "{{ url_for('static', filename='images/icon.png', _external=True) }}"
+            }
+        }
+    }
+    </script>
+</head>
+<body class="bg-background text-text-primary w-max-[100%]">
+
+    <!-- Navigation Header -->
+    <header class="bg-white shadow-subtle sticky top-0 z-50">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex-shrink-0">
+                    <a href="{{ url_for('show_page', page='homepage') }}" class="flex items-center space-x-2">
+                        <svg class="w-8 h-8 text-primary" viewBox="0 0 32 32" fill="currentColor">
+                            <path d="M16 2L3 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-13-5z"/>
+                            <path d="M12 14l2 2 6-6" stroke="white" stroke-width="2" fill="none"/>
+                        </svg>
+                        <span class="text-xl font-bold text-primary">Timothee Nkwar</span>
+                    </a>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="{{ url_for('show_page', page='homepage') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Home</a>
+                        <a href="{{ url_for('show_page', page='case_studies') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Case Studies</a>
+                        <a href="{{ url_for('show_page', page='about') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">About</a>
+                        <a href="{{ url_for('show_page', page='skills_tools') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Skills & Tools</a>
+                        <a href="{{ url_for('show_page', page='blog_insights') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Blog</a>
+                        <a href="{{ url_for('show_page', page='contact_collaboration') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Contact</a>
+                    </div>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button type="button" class="text-text-secondary hover:text-primary focus:outline-none focus:text-primary" onclick="toggleMobileMenu()">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Navigation -->
+            <div id="mobile-menu" class="md:hidden hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-surface-200">
+                   <a href="{{ url_for('show_page', page='homepage') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Home</a>
+                    <a href="{{ url_for('show_page', page='case_studies') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Case Studies</a>
+                    <a href="{{ url_for('show_page', page='about') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">About</a>
+                    <a href="{{ url_for('show_page', page='skills_tools') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Skills & Tools</a>
+                    <a href="{{ url_for('show_page', page='blog_insights') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Blog</a>
+                    <a href="{{ url_for('show_page', page='contact_collaboration') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Contact</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Article Content -->
+    <main id="main-content" role="main" class="article-container" style="max-width: 80%;">
+        <style>
+            @media screen and (max-width: 768px) {
+                .article-container {
+                    width: 100%;
+                }
+                
+            }
+        </style>
+        <article>
+            <!-- Article Header -->
+            <header class="article-header mb-8">
+                <div class="mb-8">
+                    <span class="px-3 py-1 rounded-full text-sm font-medium {% if article.category | default('uncategorized', true) == 'tutorials' %}bg-secondary text-white{% elif article.category == 'analysis' %}bg-success text-white{% elif article.category == 'methodology' %}bg-accent text-white{% elif article.category == 'trends' %}bg-warning text-white{% else %}bg-surface-200 text-text-secondary{% endif %}"
+                          role="badge"
+                          aria-label="Article category: {{ article.category | default('uncategorized', true) | title }}">
+                        {{ article.category | default('uncategorized', true) | title }}
+                    </span>
+                </div>
+                <h1>{{ article.title | default('Untitled Article', true) }}</h1>
+                <div class="flex items-center justify-between text-sm text-text-secondary mb-8 flex-wrap gap-4 article-meta">
+                    <div class="flex items-center space-x-4 flex-wrap gap-2">
+                        <time class="publication-date"
+                              datetime="{{ article.timestamp | default('2025-01-01T00:00:00Z', true) }}"
+                              aria-label="Publication date">
+                            <span class="sr-only">Published on </span>
+                            {{ article.timestamp | default('2025-01-01T00:00:00Z', true) | datetimeformat }}
+                        </time>
+                        <span class="view-count"
+                              data-article-id="{{ article.id | default('unknown', true) }}"
+                              aria-live="polite"
+                              aria-label="View count">
+                            <span class="view-count-text">
+                                {% if article.views | default(0, true) >= 1000 %}
+                                    {{ (article.views | default(0, true) | int / 1000) | float | round(1) }}K views  {# Robustesse : cast int #}
+                                {% else %}
+                                    {{ article.views | default(0, true) | int }} view{{ 's' if (article.views | default(0, true) | int) != 1 else '' }}  {# Robustesse : cast int #}
+                                {% endif %}
+                            </span>
+                        </span>
+                        <span aria-label="Estimated reading time">{{ article.read_time | default(1, true) }} min read</span>
+                    </div>
+                </div>
+
+                <!-- Tags -->
+                <div class="flex flex-wrap gap-2 mb-8 article-tags" role="list" aria-label="Article tags">
+                    {# Robustesse : vérifie que article.tags est bien une liste #}
+                    {% if article.tags is iterable and article.tags is not string and article.tags|length > 0 %}
+                        {% for tag in article.tags %}
+                            <span class="px-2 py-1 text-xs rounded {% if tag in ['TensorFlow', 'Statistics', 'Python', 'Time Series', 'Machine Learning', 'Feature Engineering'] %}bg-primary-100 text-primary{% elif tag in ['Deep Learning', 'Plotly', 'SQL', 'Database', 'Enterprise', 'Experimentation'] %}bg-secondary-100 text-secondary{% elif tag in ['Healthcare', 'E-commerce', 'Finance', 'Industry Trends', '2025', 'Risk', 'ML'] %}bg-success-100 text-success{% elif tag in ['Framework', 'Data Quality', 'A/B Testing', 'Best Practices'] %}bg-accent-100 text-accent{% elif tag in ['Ethics', 'AI'] %}bg-warning-100 text-warning{% else %}bg-surface-200 text-text-secondary{% endif %}"
+                                  role="listitem"
+                                  aria-label="Tag: {{ tag }}">
+                                {{ tag }}
+                            </span>
+                        {% endfor %}
+                    {% else %}
+                        <span class="text-xs text-gray-400">No tags</span>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- Article Content -->
+            <div class="prose prose-lg max-w-prose mx-auto"
+                 style="word-wrap: break-word; overflow-wrap: break-word; hyphens: auto;">
+                {# Robustesse : test sur article.content #}
+                {% if article.content is string and article.content|length > 0 %}
+                    {{ article.content | safe }}
+                {% else %}
+                    <p class="text-gray-500 italic">No content available.</p>
+                {% endif %}
+            </div>
+
+            <!-- Navigation and Social -->
+            <footer class="article-footer mt-12 space-y-8">
+                <nav aria-label="Article navigation">
+                    <a href="{{ url_for('show_page', page='blog_insights') }}"
+                       class="inline-flex items-center text-primary font-semibold hover:text-primary-700 transition-smooth focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                        Back to Blog
+                    </a>
+                </nav>
+
+                <!-- Social Share -->
+                <div class="flex justify-between items-center social-share">
+                    <div class="flex space-x-4" role="list" aria-label="Social media links">
+                        <a href="https://www.linkedin.com/in/timothee-nkwar-728377222/"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="text-primary-200 hover:text-primary transition-smooth focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md p-1"
+                           aria-label="Follow on LinkedIn">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </a>
+                        <a href="https://github.com/TimotheeNkwar?tab=repositories"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="text-primary-200 hover:text-primary transition-smooth focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md p-1"
+                           aria-label="View GitHub repositories">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </a>
+                    </div>
+
+                    <!-- Share buttons -->
+                    <div class="social-share">
+                        <button onclick="shareArticle('twitter')"
+                                class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-smooth focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                aria-label="Share on Twitter">
+                            Share
+                        </button>
+                        <button onclick="copyArticleLink()"
+                                class="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition-smooth focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 copy-link-btn"
+                                aria-label="Copy article link">
+                            Copy Link
+                        </button>
+                    </div>
+                </div>
+            </footer>
+        </article>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-primary-900 text-white py-16" role="contentinfo">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div class="md:col-span-2">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <svg class="w-8 h-8 text-secondary" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+                            <path d="M16 2L3 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-13-5z"/>
+                            <path d="M12 14l2 2 6-6" stroke="white" stroke-width="2" fill="none"/>
+                        </svg>
+                        <span class="text-2xl font-bold">DataCraft Portfolio</span>
+                    </div>
+                    <p class="text-primary-200 mb-6 max-w-md">
+                        Transforming complex data into strategic advantage through analytical rigor and compelling storytelling.
+                    </p>
+                    <div class="flex space-x-4" role="list" aria-label="Social media links">
+                        <a href="https://www.linkedin.com/in/timothee-nkwar-728377222/"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="text-primary-200 hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-md p-1"
+                           aria-label="LinkedIn profile">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </a>
+                        <a href="https://github.com/TimotheeNkwar?tab=repositories"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="text-primary-200 hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-md p-1"
+                           aria-label="GitHub repositories">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2" role="list">
+                        <li><a href="{{ url_for('show_page', page='case_studies') }}" class="text-primary-200 hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-sm">Case Studies</a></li>
+                        <li><a href="{{ url_for('show_page', page='about') }}" class="text-primary-200 hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-sm">About Me</a></li>
+                        <li><a href="{{ url_for('show_page', page='skills_tools') }}" class="text-primary-200 hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-sm">Skills & Tools</a></li>
+                        <li><a href="{{ url_for('show_page', page='blog_insights') }}" class="text-primary-200 hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-sm">Blog & Insights</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Get in Touch</h3>
+                    <ul class="space-y-2" role="list">
+                        <li class="text-primary-200">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                            <a href="mailto:timotheenkwar16@gmail.com" class="hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-sm">timotheenkwar16@gmail.com</a>
+                        </li>
+                        <li class="text-primary-200">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            Nicosia, Cyprus
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-primary-800 mt-12 pt-8 text-center text-primary-200">
+                <p>&copy; 2025 Timothee Nkwar. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.js" integrity="sha512-DQxuJouMaT+0vd+KkHs4L3NDZHrBoVuKII3rfhd3+YHhAYp9hzM/eUy3FqIYOLrIUSZvkNOQE5fev2E5bBzuaw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha512-D9gUyxqja7hBtkWpPWGt9wfbfaMGVt9gnyCvYa+jojwwPHLCzUm5i8rpk7vD7wNee9bA35eYIjobYPaQuKS1MQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js" defer></script>
+
+    <!-- Inline JavaScript -->
+    <script>
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const button = document.getElementById('mobile-menu-button');
+            const isExpanded = button.getAttribute('aria-expanded') === 'true';
+            menu.classList.toggle('hidden');
+            button.setAttribute('aria-expanded', !isExpanded);
+            if (!isExpanded) {
+                const firstMenuItem = menu.querySelector('a');
+                if (firstMenuItem) firstMenuItem.focus();
+            }
+        }
+
+        // Close mobile menu on outside click
+        document.addEventListener('click', (event) => {
+            const menu = document.getElementById('mobile-menu');
+            const button = document.getElementById('mobile-menu-button');
+            if (!menu.contains(event.target) && !button.contains(event.target) && !menu.classList.contains('hidden')) {
+                toggleMobileMenu();
+            }
+        });
+
+        // Share article
+        function shareArticle(platform) {
+            const url = encodeURIComponent(window.location.href);
+            const title = encodeURIComponent(document.title);
+            let shareUrl = '';
+            switch (platform) {
+                case 'twitter':
+                    shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
+                    break;
+                case 'linkedin':
+                    shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+                    break;
+                case 'facebook':
+                    shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+                    break;
+            }
+            if (shareUrl) {
+                window.open(shareUrl, '_blank', 'width=600,height=400,scrollbars=yes,resizable=yes');
+            }
+        }
+
+        // Copy article link
+        async function copyArticleLink() {
+            const button = document.querySelector('.copy-link-btn');
+            const originalText = button.textContent;
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                button.textContent = 'Copied!';
+                button.classList.remove('bg-gray-500', 'hover:bg-gray-600');
+                button.classList.add('bg-green-500', 'hover:bg-green-600');
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    button.classList.add('bg-gray-500', 'hover:bg-gray-600');
+                }, 2000);
+            } catch (err) {
+                const textArea = document.createElement('textarea');
+                textArea.value = window.location.href;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                button.textContent = 'Copied!';
+                button.classList.remove('bg-gray-500', 'hover:bg-gray-600');
+                button.classList.add('bg-green-500', 'hover:bg-green-600');
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    button.classList.add('bg-gray-500', 'hover:bg-gray-600');
+                }, 2000);
+            }
+        }
+
+        // Initialize on DOM load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Syntax highlighting
+            hljs.configure({ languages: ['python', 'javascript', 'sql'] });
+            hljs.highlightAll();
+
+            // Real-time view count
+            let viewTracked = false;
+            const socket = io.connect(`${window.location.protocol}//${document.domain}:${location.port}`, {
+                transports: ['websocket', 'polling'],
+                timeout: 5000
+            });
+
+            socket.on('connect', () => {
+                console.log('Socket.IO connected');
+                if (!viewTracked) {
+                    setTimeout(() => {
+                        socket.emit('track_view', { article_id: "{{ article.id | default('unknown', true) }}" });
+                        viewTracked = true;
+                    }, 3000);
+                }
+            });
+
+            socket.on('article_update', (data) => {
+                if (data.id === "{{ article.id | default('unknown', true) }}") {
+                    const viewCountElement = document.querySelector(`.view-count[data-article-id="${data.id}"] .view-count-text`);
+                    if (viewCountElement) {
+                        viewCountElement.textContent = data.views >= 1000
+                            ? `${(data.views / 1000).toFixed(1)}K views`
+                            : `${data.views} view${data.views !== 1 ? 's' : ''}`;
+                    }
+                }
+            });
+
+            socket.on('connect_error', (error) => {
+                console.warn('Socket.IO connection error:', error);
+            });
+
+            // Lazy load images
+            if ('IntersectionObserver' in window) {
+                const imageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            if (img.dataset.src) {
+                                img.src = img.dataset.src;
+                                img.classList.remove('lazy');
+                                observer.unobserve(img);
+                            }
+                        }
+                    });
+                });
+                document.querySelectorAll('img[data-src]').forEach(img => imageObserver.observe(img));
+            }
+
+            // Reading progress
+            function updateReadingProgress() {
+                const article = document.querySelector('article');
+                if (!article) return;
+                const scrollTop = window.scrollY || window.pageYOffset;
+                const docHeight = article.offsetHeight;
+                const winHeight = window.innerHeight;
+                const scrollPercent = Math.min(1, scrollTop / (docHeight - winHeight));
+                const scrollPercentRounded = Math.round(scrollPercent * 100);
+                const progressBar = document.querySelector('.reading-progress');
+                if (progressBar) {
+                    progressBar.style.width = scrollPercentRounded + '%';
+                    progressBar.setAttribute('aria-valuenow', scrollPercentRounded);
+                }
+            }
+
+            // Throttled scroll
+            let ticking = false;
+            function requestUpdateProgress() {
+                if (!ticking) {
+                    requestAnimationFrame(() => {
+                        updateReadingProgress();
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            }
+            window.addEventListener('scroll', requestUpdateProgress);
+
+            // Accessibility: Focus states
+            document.querySelectorAll('footer a, footer button').forEach(el => {
+                el.addEventListener('focus', () => el.classList.add('ring', 'ring-primary-400'));
+                el.addEventListener('blur', () => el.classList.remove('ring', 'ring-primary-400'));
+            });
+        });
+    </script>
+</body>
+</html>

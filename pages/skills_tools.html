@@ -1,0 +1,2120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skills & Tools - DataCraft Portfolio</title>
+    <meta name="description" content="Interactive skills laboratory showcasing technical capabilities through live code examples, data visualizations, and machine learning demonstrations." />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+    <link rel="icon" href="{{ url_for('static', filename='images/icon.png') }}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script type="module" src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2Fdatacraft2733back.builtwithrocket.new&_be=https%3A%2F%2Fapplication.rocket.new&_v=0.1.6"></script>
+</head>
+<!-- Ajoute ce script juste avant </body> -->
+<script>
+    // NAVIGATION ACTIVE BACKGROUND LOGIC (clic utilisateur)
+    function setActiveNavOnClick() {
+        // Sélectionne tous les liens de navigation (desktop + mobile)
+        const navLinks = document.querySelectorAll(
+            'nav a, #mobile-menu a'
+        );
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Pour les liens internes uniquement (pas target="_blank")
+                if (
+                    this.target === "_blank" ||
+                    this.href.startsWith('mailto:') ||
+                    this.href.startsWith('tel:')
+                ) return;
+
+                // Retire le fond noir de tous les liens
+                navLinks.forEach(l => l.classList.remove('bg-primary-900', 'text-white', 'font-bold', 'shadow-lg'));
+                // Applique le fond noir sur le lien cliqué
+                this.classList.add('bg-primary-900', 'text-white', 'font-bold', 'shadow-lg');
+            });
+        });
+
+        // Applique aussi au chargement pour la page courante
+        const currentPath = window.location.pathname.replace(/\/+$/, '');
+        navLinks.forEach(link => {
+            let linkPath = link.getAttribute('href');
+            if (linkPath) {
+                linkPath = linkPath.replace(/^https?:\/\/[^/]+/, '');
+                linkPath = linkPath.split(/[?#]/)[0];
+                linkPath = linkPath.replace(/\/+$/, '');
+            }
+            if (linkPath === currentPath) {
+                link.classList.add('bg-primary-900', 'text-white', 'font-bold', 'shadow-lg');
+            } else {
+                link.classList.remove('bg-primary-900', 'text-white', 'font-bold', 'shadow-lg');
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', setActiveNavOnClick);
+</script>
+
+<body class="bg-background text-text-primary">
+    <!-- Navigation Header -->
+    <header class="bg-white shadow-subtle sticky top-0 z-50">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex-shrink-0">
+                    <a href="{{ url_for('show_page', page='homepage') }}" class="flex items-center space-x-2">
+                        <svg class="w-8 h-8 text-primary" viewBox="0 0 32 32" fill="currentColor">
+                            <path d="M16 2L3 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-13-5z"/>
+                            <path d="M12 14l2 2 6-6" stroke="white" stroke-width="2" fill="none"/>
+                        </svg>
+                        <span class="text-xl font-bold text-primary">Timothee Nkwar</span>
+                    </a>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="{{ url_for('show_page', page='homepage') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Home</a>
+                        <a href="{{ url_for('show_page', page='case_studies') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Case Studies</a>
+                        <a href="{{ url_for('show_page', page='about') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">About</a>
+                        <a href="{{ url_for('show_page', page='skills_tools') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Skills & Tools</a>
+                        <a href="{{ url_for('show_page', page='blog_insights') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Blog</a>
+                        <a href="{{ url_for('show_page', page='contact_collaboration') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Contact</a>
+                    </div>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button type="button" class="text-text-secondary hover:text-primary focus:outline-none focus:text-primary" onclick="toggleMobileMenu()">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Navigation -->
+            <div id="mobile-menu" class="md:hidden hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-surface-200">
+                    <a href="{{ url_for('show_page', page='homepage') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Home</a>
+                    <a href="{{ url_for('show_page', page='case_studies') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Case Studies</a>
+                    <a href="{{ url_for('show_page', page='about') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">About</a>
+                    <a href="{{ url_for('show_page', page='skills_tools') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Skills & Tools</a>
+                    <a href="{{ url_for('show_page', page='blog_insights') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Blog</a>
+                    <a href="{{ url_for('show_page', page='contact_collaboration') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Contact</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="hero" class="relative bg-gradient-to-br from-primary-50 to-secondary-50 py-20 lg:py-32 overflow-hidden">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 opacity-10">
+            <svg class="w-full h-full" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" stroke-width="0.5"/>
+                    </pattern>
+                </defs>
+                <rect width="100" height="100" fill="url(#grid)" class="text-primary"/>
+            </svg>
+        </div>
+
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-primary mb-6 leading-tight">
+                    Interactive Skills
+                    <span class="text-gradient">Laboratory</span>
+                </h1>
+                <p class="text-xl text-text-secondary mb-8 max-w-3xl mx-auto">
+                    Experience my technical capabilities through live demonstrations, interactive code examples, and real-time data analysis tools. See skills in action, not just listed.
+                </p>
+
+                <!-- Quick Navigation -->
+                <div class="flex flex-wrap justify-center gap-4 mb-12">
+                    <button onclick="scrollToSection('technical-skills')" class="btn-primary">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                        </svg>
+                        Technical Skills
+                    </button>
+                    <button onclick="scrollToSection('ml-demos')" class="btn-secondary">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                        ML Demos
+                    </button>
+                    <button onclick="scrollToSection('data-viz')" class="btn-accent">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        Data Visualization
+                    </button>
+                </div>
+
+                <!-- Skills Overview Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+                    <div class="bg-white rounded-xl p-6 shadow-interactive">
+                        <div class="text-3xl font-bold text-primary mb-2">1+</div>
+                        <div class="text-sm text-text-secondary">Years Experience</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 shadow-interactive">
+                        <div class="text-3xl font-bold text-secondary mb-2">10+</div>
+                        <div class="text-sm text-text-secondary">Technologies</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 shadow-interactive">
+                        <div class="text-3xl font-bold text-accent mb-2">10+</div>
+                        <div class="text-sm text-text-secondary">Certifications</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 shadow-interactive">
+                        <div class="text-3xl font-bold text-success mb-2">10+</div>
+                        <div class="text-sm text-text-secondary">Projects</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical Skills Interactive Section -->
+    <section id="technical-skills" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-primary mb-4">Technical Skills in Action</h2>
+                <p class="text-xl text-text-secondary max-w-3xl mx-auto">
+                    Interactive demonstrations of programming languages, frameworks, and tools with live code examples
+                </p>
+            </div>
+
+            <!-- Programming Languages -->
+            <div class="mb-16">
+                <h3 class="text-2xl font-bold text-primary mb-8 text-center">Programming Languages</h3>
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <!-- Python Demo -->
+                    <div class="bg-white rounded-2xl shadow-interactive p-6 border border-surface-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M14.25.18l.9.2.73.26.59.3.45.32.34.34.25.34.16.33.1.3.04.26.02.2-.01.13V8.5l-.05.63-.13.55-.21.46-.26.38-.3.31-.33.25-.35.19-.35.14-.33.1-.3.07-.26.04-.21.02H8.77l-.69.05-.59.14-.5.22-.41.27-.33.32-.27.35-.2.36-.15.37-.1.35-.07.32-.04.27-.02.21v3.06H3.17l-.21-.03-.28-.07-.32-.12-.35-.18-.36-.26-.36-.36-.35-.46-.32-.59-.28-.73-.21-.88-.14-1.05-.05-1.23.06-1.22.16-1.04.24-.87.32-.71.36-.57.4-.44.42-.33.42-.24.4-.16.36-.1.32-.05.26-.02.21-.01h5.84l.69-.05.59-.14.5-.21.41-.28.33-.32.27-.35.2-.36.15-.36.1-.35.07-.32.04-.28.02-.21V6.07h2.09l.14.01zm-6.47 14.25l-.23.33-.08.41.08.41.23.34.33.22.41.09.41-.09.33-.22.23-.34.08-.41-.08-.41-.23-.33-.33-.22-.41-.09-.41.09-.33.22zM19.8 14.2c0-2.81-.73-5.05-2.07-6.71-1.42-1.66-3.5-2.49-6.23-2.49-2.73 0-4.79.83-6.17 2.49-1.38 1.66-2.07 3.9-2.07 6.71 0 2.81.69 5.05 2.07 6.71 1.38 1.66 3.44 2.49 6.17 2.49 2.73 0 4.81-.83 6.23-2.49 1.34-1.66 2.07-3.9 2.07-6.71z"/>
+                                </svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-primary">Python</h4>
+                                    <div class="text-sm text-text-secondary">Junior • 2 years</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-24 bg-surface-200 rounded-full h-2">
+                                    <div class="bg-primary h-2 rounded-full" style="width: 75%"></div>
+                                </div>
+                                <span class="text-sm font-medium text-primary">75%</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-900 rounded-lg p-4 font-code text-sm overflow-x-auto mb-4">
+                            <pre class="text-green-400"><code>
+# Data Analysis Example
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+
+def analyze_customer_data(data):
+    # Clean and preprocess data
+    df = pd.DataFrame(data)
+    df['total_spent'] = df['orders'] * df['avg_order_value']
+    
+    # Calculate customer segments
+    scaler = StandardScaler()
+    features = ['recency', 'frequency', 'monetary']
+    scaled_features = scaler.fit_transform(df[features])
+    
+    return {
+        'high_value': len(df[df['total_spent'] > df['total_spent'].quantile(0.8)]),
+        'avg_clv': df['total_spent'].mean(),
+        'retention_rate': (df['recency'] < 30).mean() * 100
+    }
+
+# Try it with sample data
+sample_data = {
+    'recency': [5, 15, 45, 2, 30],
+    'frequency': [12, 8, 3, 20, 6],
+    'monetary': [1200, 800, 300, 2000, 600],
+    'orders': [12, 8, 3, 20, 6],
+    'avg_order_value': [100, 100, 100, 100, 100]
+}
+
+result = analyze_customer_data(sample_data)
+print(f"High-value customers: {result['high_value']}")
+print(f"Average CLV: ${result['avg_clv']:.2f}")
+print(f"Retention rate: {result['retention_rate']:.1f}%")</code></pre>
+                        </div>
+
+                        <div class="bg-surface-50 rounded-lg p-4">
+                            <h5 class="font-semibold text-primary mb-2">Interactive Demo</h5>
+                            <button onclick="runPythonDemo()" class="btn-primary text-sm mr-3">Run Analysis</button>
+                            <button onclick="resetPythonDemo()" class="btn-secondary text-sm">Reset</button>
+                            <div id="python-output" class="mt-3 p-3 bg-white rounded border font-code text-sm hidden">
+                                <div class="text-success">Analysis Results:</div>
+                                <div>High-value customers: 1</div>
+                                <div>Average CLV: $1,000.00</div>
+                                <div>Retention rate: 60.0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        // Python Demo
+                        function runPythonDemo() {
+                            const output = document.getElementById('python-output');
+                            output.classList.remove('hidden');
+
+                            // Simulate processing delay with a loading state
+                            output.innerHTML = '<div class="text-info">Processing...</div>';
+
+                            setTimeout(() => {
+                                // Generate realistic random variations with constraints
+                                const highValue = Math.floor(Math.random() * 3) + 1; // 1 to 3 high-value customers
+                                const avgClv = (Math.random() * 500 + 800).toFixed(2); // $800 to $1300
+                                const retentionRate = (Math.random() * 30 + 50).toFixed(1); // 50% to 80%
+
+                                // Update output with animated effect
+                                output.style.opacity = '0';
+                                setTimeout(() => {
+                                    output.innerHTML = `
+                <div class="text-success">Analysis Results:</div>
+                <div>High-value customers: ${highValue}</div>
+                <div>Average CLV: $${avgClv}</div>
+                <div>Retention rate: ${retentionRate}%</div>
+            `;
+                                    output.style.transition = 'opacity 0.3s ease-in';
+                                    output.style.opacity = '1';
+                                }, 50); // Short delay for fade-in effect
+                            }, 500); // 500ms processing simulation
+                        }
+
+                        function resetPythonDemo() {
+                            const output = document.getElementById('python-output');
+                            output.classList.add('hidden');
+
+                            // Smooth reset with fade-out effect
+                            output.style.opacity = '1';
+                            output.style.transition = 'opacity 0.3s ease-out';
+                            output.style.opacity = '0';
+
+                            setTimeout(() => {
+                                output.innerHTML = `
+            <div class="text-success">Analysis Results:</div>
+            <div>High-value customers: 1</div>
+            <div>Average CLV: $1,000.00</div>
+            <div>Retention rate: 60.0%</div>
+        `;
+                                output.classList.add('hidden');
+                                output.style.transition = ''; // Reset transition
+                            }, 300); // Match fade-out duration
+                        }
+                    </script>
+                    <!-- R Demo -->
+                    <div class="bg-white rounded-2xl shadow-interactive p-6 border border-surface-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-secondary-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-secondary" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm4.5 17.5h-9v-11h9v11z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-primary">R</h4>
+                                    <div class="text-sm text-text-secondary">Junior • 3 months</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-24 bg-surface-200 rounded-full h-2">
+                                    <div class="bg-secondary h-2 rounded-full" style="width: 38%"></div>
+                                </div>
+                                <span class="text-sm font-medium text-secondary">38%</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-900 rounded-lg p-4 font-code text-sm overflow-x-auto mb-4">
+                            <pre class="text-blue-400"><code># Statistical Analysis in R
+library(dplyr)
+library(ggplot2)
+
+# A/B Test Analysis Function
+analyze_ab_test <- function(control, treatment) {
+  # Calculate basic statistics
+  control_mean <- mean(control)
+  treatment_mean <- mean(treatment)
+  # Perform t-test
+  test_result <- t.test(treatment, control)
+
+  # Calculate effect size
+  pooled_sd <- sqrt(((length(control)-1)*var(control) + 
+                    (length(treatment)-1)*var(treatment)) / 
+                   (length(control) + length(treatment) - 2))
+  
+  effect_size <- (treatment_mean - control_mean) / pooled_sd
+  return(list(
+    control_mean = control_mean,
+    treatment_mean = treatment_mean,
+    p_value = test_result$p.value,
+    effect_size = effect_size,
+    significant = test_result$p.value < 0.05
+  ))
+}
+# Sample data
+control_group <- c(2.3, 2.1, 2.4, 2.2, 2.5, 2.0, 2.3)
+treatment_group <- c(2.8, 2.9, 2.7, 3.0, 2.6, 2.8, 2.9)
+
+# Run analysis
+results <- analyze_ab_test(control_group, treatment_group)
+print(paste("Lift:", round((results$treatment_mean / 
+            results$control_mean - 1) * 100, 1), "%"))</code></pre>
+                        </div>
+
+                        <div class="bg-surface-50 rounded-lg p-4">
+                            <h5 class="font-semibold text-primary mb-2">Statistical Output</h5>
+                            <button onclick="runRDemo()" class="btn-secondary text-sm mr-3">Run A/B Test</button>
+                            <button onclick="resetRDemo()" class="btn-primary text-sm">Reset</button>
+                            <div id="r-output" class="mt-3 p-3 bg-white rounded border font-code text-sm hidden">
+                                <div class="text-secondary">A/B Test Results:</div>
+                                <div>Control Mean: 2.26</div>
+                                <div>Treatment Mean: 2.81</div>
+                                <div>Lift: +24.3%</div>
+                                <div class="text-success">Statistically Significant: Yes</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+<script>
+        async function runRDemo() {
+            try {
+                const response = await fetch('/api/run_ab_test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        control: [2.3, 2.1, 2.4, 2.2, 2.5, 2.0, 2.3],
+                        treatment: [2.8, 2.9, 2.7, 3.0, 2.6, 2.8, 2.9]
+                    })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    document.getElementById('r-output').classList.remove('hidden');
+                    document.getElementById('control-mean').textContent = `Control Mean: ${result.control_mean}`;
+                    document.getElementById('treatment-mean').textContent = `Treatment Mean: ${result.treatment_mean}`;
+                    document.getElementById('lift').textContent = `Lift: +${result.lift}%`;
+                    document.getElementById('significant').textContent = `Statistically Significant: ${result.significant ? 'Yes' : 'No'}`;
+                } else {
+                    console.error('Error:', result.error);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+            }
+        }
+
+        function resetRDemo() {
+            document.getElementById('r-output').classList.add('hidden');
+            document.getElementById('control-mean').textContent = '';
+            document.getElementById('treatment-mean').textContent = '';
+            document.getElementById('lift').textContent = '';
+            document.getElementById('significant').textContent = '';
+        }
+    </script>
+            <!-- SQL & Database Skills -->
+            <div class="mb-16">
+                <h3 class="text-2xl font-bold text-primary mb-8 text-center">Database & SQL</h3>
+                <div class="bg-white rounded-2xl shadow-interactive p-6 border border-surface-200">
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <div class="flex items-center space-x-3 mb-4">
+                                <div class="w-10 h-10 bg-accent-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-accent" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-semibold text-primary">Advanced SQL</h4>
+                                    <div class="text-sm text-text-secondary">PostgreSQL, MySQL, BigQuery</div>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-900 rounded-lg p-4 font-code text-sm overflow-x-auto">
+                                <pre class="text-yellow-400"><code>-- Customer Cohort Analysis
+WITH monthly_cohorts AS (
+  SELECT 
+    customer_id,
+    DATE_TRUNC('month', first_order_date) as cohort_month,
+    DATE_TRUNC('month', order_date) as order_month
+  FROM customer_orders
+),
+cohort_data AS (
+  SELECT 
+    cohort_month,
+    order_month,
+    COUNT(DISTINCT customer_id) as customers,
+    EXTRACT(MONTH FROM AGE(order_month, cohort_month)) as period_number
+  FROM monthly_cohorts
+  GROUP BY 1, 2, 4
+)
+SELECT 
+  cohort_month,
+  period_number,
+  customers,
+  ROUND(100.0 * customers / 
+    FIRST_VALUE(customers) OVER (
+      PARTITION BY cohort_month 
+      ORDER BY period_number
+    ), 2) as retention_rate
+FROM cohort_data
+ORDER BY cohort_month, period_number;</code></pre>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h5 class="font-semibold text-primary mb-4">Query Results Visualization</h5>
+                            <div class="bg-surface-50 rounded-lg p-4">
+                                <div class="grid grid-cols-4 gap-2 text-xs font-code">
+                                    <div class="font-semibold text-primary">Month</div>
+                                    <div class="font-semibold text-primary">Period</div>
+                                    <div class="font-semibold text-primary">Customers</div>
+                                    <div class="font-semibold text-primary">Retention</div>
+
+                                    <div>2024-01</div>
+                                    <div>0</div>
+                                    <div>1,247</div>
+                                    <div class="text-success">100.0%</div>
+                                    <div>2024-01</div>
+                                    <div>1</div>
+                                    <div>892</div>
+                                    <div class="text-success">71.5%</div>
+                                    <div>2024-01</div>
+                                    <div>2</div>
+                                    <div>634</div>
+                                    <div class="text-warning">50.8%</div>
+                                    <div>2024-01</div>
+                                    <div>3</div>
+                                    <div>456</div>
+                                    <div class="text-accent">36.6%</div>
+
+                                    <div>2024-02</div>
+                                    <div>0</div>
+                                    <div>1,389</div>
+                                    <div class="text-success">100.0%</div>
+                                    <div>2024-02</div>
+                                    <div>1</div>
+                                    <div>1,001</div>
+                                    <div class="text-success">72.1%</div>
+                                    <div>2024-02</div>
+                                    <div>2</div>
+                                    <div>723</div>
+                                    <div class="text-success">52.1%</div>
+                                    <div>2024-02</div>
+                                    <div>3</div>
+                                    <div>528</div>
+                                    <div class="text-warning">38.0%</div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <h6 class="font-semibold text-primary mb-2">Database Technologies</h6>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="px-3 py-1 bg-primary-100 text-primary text-sm rounded-full">PostgreSQL</span>
+                                    <span class="px-3 py-1 bg-secondary-100 text-secondary text-sm rounded-full">MySQL</span>
+                                    <span class="px-3 py-1 bg-accent-100 text-accent text-sm rounded-full">BigQuery</span>
+                                    <span class="px-3 py-1 bg-success-100 text-success text-sm rounded-full">Snowflake</span>
+                                    <span class="px-3 py-1 bg-warning-100 text-warning text-sm rounded-full">MongoDB</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Frameworks & Libraries -->
+            <div>
+                <h3 class="text-2xl font-bold text-primary mb-8 text-center">Frameworks & Libraries</h3>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <!-- Data Science Libraries -->
+                    <div class="bg-white rounded-xl shadow-interactive p-6 border border-surface-200">
+                        <h4 class="text-lg font-semibold text-primary mb-4">Data Science</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm">Pandas</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 bg-surface-200 rounded-full h-1.5">
+                                        <div class="bg-primary h-1.5 rounded-full" style="width: 75%"></div>
+                                    </div>
+                                    <span class="text-xs text-primary">75%</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm">NumPy</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 bg-surface-200 rounded-full h-1.5">
+                                        <div class="bg-primary h-1.5 rounded-full" style="width: 72%"></div>
+                                    </div>
+                                    <span class="text-xs text-primary">72%</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm">SciPy</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 bg-surface-200 rounded-full h-1.5">
+                                        <div class="bg-primary h-1.5 rounded-full" style="width: 68%"></div>
+                                    </div>
+                                    <span class="text-xs text-primary">68%</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm">Statsmodels</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 bg-surface-200 rounded-full h-1.5">
+                                        <div class="bg-primary h-1.5 rounded-full" style="width: 45%"></div>
+                                    </div>
+                                    <span class="text-xs text-primary">45%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Machine Learning -->
+                    <div class="bg-white rounded-xl shadow-interactive p-6 border border-surface-200">
+                        <h4 class="text-lg font-semibold text-primary mb-4">Machine Learning</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm">Scikit-learn</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 bg-surface-200 rounded-full h-1.5">
+                                        <div class="bg-secondary h-1.5 rounded-full" style="width: 74%"></div>
+                                    </div>
+                                    <span class="text-xs text-secondary">74%</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm">TensorFlow</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 bg-surface-200 rounded-full h-1.5">
+                                        <div class="bg-secondary h-1.5 rounded-full" style="width: 37%"></div>
+                                    </div>
+                                    <span class="text-xs text-secondary">37%</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm">PyTorch</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 bg-surface-200 rounded-full h-1.5">
+                                        <div class="bg-secondary h-1.5 rounded-full" style="width: 42%"></div>
+                                    </div>
+                                    <span class="text-xs text-secondary">42%</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm">XGBoost</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 bg-surface-200 rounded-full h-1.5">
+                                        <div class="bg-secondary h-1.5 rounded-full" style="width: 40%"></div>
+                                    </div>
+                                    <span class="text-xs text-secondary">40%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visualization -->
+                    <div class="bg-white rounded-xl shadow-interactive p-6 border border-surface-200">
+                        <h4 class="text-lg font-semibold text-primary mb-4">Visualization</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm">Matplotlib</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 bg-surface-200 rounded-full h-1.5">
+                                        <div class="bg-accent h-1.5 rounded-full" style="width: 73%"></div>
+                                    </div>
+                                    <span class="text-xs text-accent">73%</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm">Seaborn</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 bg-surface-200 rounded-full h-1.5">
+                                        <div class="bg-accent h-1.5 rounded-full" style="width: 71%"></div>
+                                    </div>
+                                    <span class="text-xs text-accent">71%</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm">Plotly</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 bg-surface-200 rounded-full h-1.5">
+                                        <div class="bg-accent h-1.5 rounded-full" style="width: 69%"></div>
+                                    </div>
+                                    <span class="text-xs text-accent">69%</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm">Dash</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-16 bg-surface-200 rounded-full h-1.5">
+                                        <div class="bg-accent h-1.5 rounded-full" style="width: 28%"></div>
+                                    </div>
+                                    <span class="text-xs text-accent">28%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Machine Learning Demonstrations -->
+    <section id="ml-demos" class="py-20 bg-surface-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-primary mb-4">Machine Learning Demonstrations</h2>
+                <p class="text-xl text-text-secondary max-w-3xl mx-auto">
+                    Interactive ML models you can test with your own inputs to see predictions in real-time
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Customer Churn Prediction -->
+                <div class="bg-white rounded-2xl shadow-interactive p-6">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-primary">Customer Churn Prediction</h3>
+                            <p class="text-text-secondary">Random Forest Classifier • 77.47% Accuracy</p>
+                        </div>
+                    </div>
+
+                    <form method="POST" id="churn-form">
+                        <div class="space-y-4 mb-6">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-primary mb-2">Monthly Charges ($)</label>
+                                    <input type="number" id="monthly-charges" name="monthly_charges" class="input-field" value="75" min="0" max="200" required />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-primary mb-2">Tenure (months)</label>
+                                    <input type="number" id="tenure" name="tenure" class="input-field" value="24" min="0" max="72" required />
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-primary mb-2">Total Charges ($)</label>
+                                    <input type="number" id="total-charges" name="total_charges" class="input-field" value="1800" min="0" max="10000" required />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-primary mb-2">Contract Type</label>
+                                    <select id="contract-type" name="contract_type" class="input-field" required>
+                                        <option value="month-to-month">Month-to-month</option>
+                                        <option value="one-year">One year</option>
+                                        <option value="two-year">Two year</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="predict-button" class="btn-primary w-full mb-4">Predict Churn Risk</button>
+                    </form>
+
+                    <div id="churn-result" class="hidden">
+                        <div class="bg-surface-50 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="font-semibold text-primary">Churn Probability:</span>
+                                <span id="churn-probability" class="text-2xl font-bold text-error">0%</span>
+                            </div>
+                            <div class="w-full bg-surface-200 rounded-full h-3 mb-3">
+                                <div id="churn-bar" class="bg-error h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                            <div id="churn-recommendation" class="text-sm text-text-secondary">
+                                <strong>Recommendation:</strong> No prediction yet.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    document.getElementById('churn-form').addEventListener('submit', async function(event) {
+                        event.preventDefault();
+                        await predictChurn();
+                    });
+
+                    async function predictChurn() {
+                        const button = document.getElementById('predict-button');
+                        button.disabled = true;
+                        button.textContent = 'Predicting...';
+
+                        const monthlyCharges = document.getElementById('monthly-charges').value;
+                        const tenure = document.getElementById('tenure').value;
+                        const totalCharges = document.getElementById('total-charges').value;
+                        const contractType = document.getElementById('contract-type').value;
+
+                        if (!monthlyCharges || !tenure || !totalCharges || !contractType) {
+                            alert('Please fill in all fields.');
+                            button.disabled = false;
+                            button.textContent = 'Predict Churn Risk';
+                            return;
+                        }
+
+                        const data = {
+                            monthly_charges: parseFloat(monthlyCharges),
+                            tenure: parseInt(tenure),
+                            total_charges: parseFloat(totalCharges),
+                            contract_type: contractType
+                        };
+
+                        if (data.monthly_charges < 0 || data.monthly_charges > 200) {
+                            alert('Monthly charges must be between 0 and 200.');
+                            button.disabled = false;
+                            button.textContent = 'Predict Churn Risk';
+                            return;
+                        }
+                        if (data.tenure < 0 || data.tenure > 72) {
+                            alert('Tenure must be between 0 and 72 months.');
+                            button.disabled = false;
+                            button.textContent = 'Predict Churn Risk';
+                            return;
+                        }
+                        if (data.total_charges < 0 || data.total_charges > 10000) {
+                            alert('Total charges must be between 0 and 10000.');
+                            button.disabled = false;
+                            button.textContent = 'Predict Churn Risk';
+                            return;
+                        }
+
+                        try {
+                            const response = await fetch('/predict', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(data)
+                            });
+
+                            if (!response.ok) {
+                                throw new Error('Prediction request failed.');
+                            }
+
+                            const result = await response.json();
+                            const churnResult = document.getElementById('churn-result');
+                            const churnProbability = document.getElementById('churn-probability');
+                            const churnBar = document.getElementById('churn-bar');
+                            const churnRecommendation = document.getElementById('churn-recommendation');
+
+                            const probabilityPercent = (result.probability * 100).toFixed(0);
+                            churnProbability.textContent = `${probabilityPercent}%`;
+                            churnBar.style.width = `${probabilityPercent}%`;
+                            churnBar.classList.remove('bg-error', 'bg-warning', 'bg-success');
+                            if (result.probability >= 0.7) {
+                                churnBar.classList.add('bg-error');
+                            } else if (result.probability >= 0.5) {
+                                churnBar.classList.add('bg-warning');
+                            } else {
+                                churnBar.classList.add('bg-success');
+                            }
+                            churnRecommendation.innerHTML = `<strong>Recommendation:</strong> ${result.recommendation}`;
+                            churnResult.classList.remove('hidden');
+
+                            button.disabled = false;
+                            button.textContent = 'Predict Churn Risk';
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('An error occurred while predicting churn. Please try again.');
+                            button.disabled = false;
+                            button.textContent = 'Predict Churn Risk';
+                        }
+                    }
+                </script>
+
+                <!-- Price Optimization -->
+                <div class="bg-white rounded-2xl shadow-interactive p-6 mt-6">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-12 h-12 bg-secondary-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-primary">Dynamic Price Optimization</h3>
+                            <p class="text-text-secondary">Gradient Boosting • Revenue Maximization</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 mb-6">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-primary mb-2">Product Category</label>
+                                <select id="product-category" class="input-field">
+                                    <option value="electronics">Electronics</option>
+                                    <option value="clothing">Clothing</option>
+                                    <option value="books">Books</option>
+                                    <option value="home">Home & Garden</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-primary mb-2">Competitor Price ($)</label>
+                                <input type="number" id="competitor-price" class="input-field" value="99" min="10" max="500" />
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-primary mb-2">Inventory Level</label>
+                                <input type="number" id="inventory-level" class="input-field" value="150" min="0" max="1000" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-primary mb-2">Demand Score (1-10)</label>
+                                <input type="number" id="demand-score" class="input-field" value="7" min="1" max="10" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="optimizePrice()" class="btn-secondary w-full mb-4">Optimize Price</button>
+
+                    <div id="price-result" class="hidden">
+                        <div class="bg-surface-50 rounded-lg p-4">
+                            <div class="grid grid-cols-2 gap-4 mb-3">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-secondary" id="optimal-price">$94</div>
+                                    <div class="text-sm text-text-secondary">Optimal Price</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-success" id="revenue-lift">+12%</div>
+                                    <div class="text-sm text-text-secondary">Revenue Lift</div>
+                                </div>
+                            </div>
+                            <div id="price-strategy" class="text-sm text-text-secondary">
+                                <strong>Strategy:</strong> Price slightly below competitor while maintaining healthy margins. High demand supports premium positioning.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+<script>
+
+        async function optimizePrice() {
+            const competitorPrice = parseFloat(document.getElementById('competitor-price').value);
+            const inventoryLevel = parseFloat(document.getElementById('inventory-level').value);
+            const demandScore = parseFloat(document.getElementById('demand-score').value);
+            const productCategory = document.getElementById('product-category').value;
+            const resultSection = document.getElementById('price-result');
+            const optimalPriceElement = document.getElementById('optimal-price');
+            const revenueLiftElement = document.getElementById('revenue-lift');
+            const priceStrategyElement = document.getElementById('price-strategy');
+
+            // Validation des entrées
+            if (isNaN(competitorPrice) || isNaN(inventoryLevel) || isNaN(demandScore)) {
+                alert("Veuillez entrer des valeurs numériques valides pour tous les champs.");
+                resultSection.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/optimize-price', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        competitorPrice,
+                        inventoryLevel,
+                        demandScore,
+                        productCategory
+                    })
+                });
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert(result.message);
+                    resultSection.classList.add('hidden');
+                    return;
+                }
+
+                const { optimalPrice, revenueLift, priceStrategy } = result.data;
+
+                // Affichage des résultats
+                resultSection.classList.remove('hidden');
+                const formattedPrice = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'USD' }).format(optimalPrice);
+                optimalPriceElement.textContent = formattedPrice;
+                revenueLiftElement.textContent = `${revenueLift > 0 ? '+' : ''}${revenueLift}%`;
+                priceStrategyElement.innerHTML = `<strong>Stratégie :</strong> ${priceStrategy}`;
+            } catch (error) {
+                alert("Erreur lors de la communication avec le serveur.");
+                resultSection.classList.add('hidden');
+            }
+        }
+
+        // Fonction pour charger les données simulées
+        async function loadMockData() {
+            const productCategory = document.getElementById('product-category').value;
+            try {
+                const response = await fetch(`/api/pricing-data/${productCategory}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const { competitorPrice, inventoryLevel, demandScore } = result.data;
+                    document.getElementById('competitor-price').value = competitorPrice;
+                    document.getElementById('inventory-level').value = inventoryLevel;
+                    document.getElementById('demand-score').value = demandScore;
+                }
+            } catch (error) {
+                console.error("Erreur lors du chargement des données simulées:", error);
+            }
+        }
+
+        // Charger les données simulées quand la catégorie change
+        document.getElementById('product-category').addEventListener('change', loadMockData);
+</script>
+
+
+
+        <!-- Sentiment Analysis Section -->
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="flex items-center space-x-3 mb-6">
+                <div class="w-12 h-12 bg-accent-100 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-800">Real-time Sentiment Analysis</h3>
+                            <p class="text-gray-600">Powered by Gemini API • Multi-language Support</p>
+                        </div>
+                    </div>
+                    <div class="space-y-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-800 mb-2" for="sentiment-text">Enter Text to Analyze</label>
+                            <textarea id="sentiment-text" aria-label="Enter text for sentiment analysis" class="input-field-sentiment h-24 resize-none" maxlength="10000" placeholder="Type or paste customer feedback, reviews, or social media posts..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-800 mb-2" for="sentiment-language">Select Language</label>
+                            <select id="sentiment-language" aria-label="Select language for text analysis" class="input-field-sentiment">
+                        <option value="auto">Auto-detect</option>
+                        <option value="en">English</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                        <option value="zh">Chinese</option>
+                    </select>
+                        </div>
+                    </div>
+                    <button aria-label="Analyze sentiment of entered text" class="btn-accent w-full mb-4 flex items-center justify-center" id="sentiment-button">
+                <span id="sentiment-button-text">Analyze Sentiment</span>
+                <svg id="sentiment-loading-spinner" class="hidden w-5 h-5 ml-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+            </button>
+                    <div id="sentiment-error" class="hidden text-error text-sm mb-4" role="alert"></div>
+                    <div id="sentiment-result" class="hidden" aria-live="polite">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="font-semibold text-gray-800">Overall Sentiment:</span>
+                                <span id="sentiment-label" class="px-3 py-1 rounded-full text-sm font-medium"></span>
+                            </div>
+                            <div class="space-y-2 mb-4">
+                                <div>
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span>Positive</span>
+                                        <span id="sentiment-positive-score" class="font-medium"></span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div id="sentiment-positive-bar" class="h-2 rounded-full progress-positive" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span>Neutral</span>
+                                        <span id="sentiment-neutral-score" class="font-medium"></span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div id="sentiment-neutral-bar" class="h-2 rounded-full progress-neutral" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span>Negative</span>
+                                        <span id="sentiment-negative-score" class="font-medium"></span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div id="sentiment-negative-bar" class="h-2 rounded-full progress-negative" style="width: 0%" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="sentiment-insights" class="text-sm text-gray-600"></div>
+                        </div>
+                    </div>
+                </div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        console.log("DOM loaded, initializing Sentiment Analysis");
+
+        const button = document.getElementById("sentiment-button");
+        const textInput = document.getElementById("sentiment-text");
+        const languageSelect = document.getElementById("sentiment-language");
+        const resultDiv = document.getElementById("sentiment-result");
+        const label = document.getElementById("sentiment-label");
+        const posScore = document.getElementById("sentiment-positive-score");
+        const neuScore = document.getElementById("sentiment-neutral-score");
+        const negScore = document.getElementById("sentiment-negative-score");
+        const posBar = document.getElementById("sentiment-positive-bar");
+        const neuBar = document.getElementById("sentiment-neutral-bar");
+        const negBar = document.getElementById("sentiment-negative-bar");
+        const insights = document.getElementById("sentiment-insights");
+        const errorDiv = document.getElementById("sentiment-error");
+
+        // Vérifier les éléments DOM
+        if (!button || !textInput || !languageSelect || !resultDiv || !label ||
+            !posScore || !neuScore || !negScore || !posBar || !neuBar || !negBar || !errorDiv) {
+            console.error("Sentiment Analysis: Missing DOM elements", {
+                button: !!button,
+                textInput: !!textInput,
+                languageSelect: !!languageSelect,
+                resultDiv: !!resultDiv,
+                label: !!label,
+                posScore: !!posScore,
+                neuScore: !!neuScore,
+                negScore: !!negScore,
+                posBar: !!posBar,
+                neuBar: !!neuBar,
+                negBar: !!negBar,
+                errorDiv: !!errorDiv
+            });
+            if (errorDiv) {
+                errorDiv.innerText = "Error: Interface not properly initialized.";
+                errorDiv.classList.remove("hidden");
+            }
+            return;
+        }
+
+        console.log("Sentiment Analysis: All DOM elements found, attaching click listener");
+
+        button.addEventListener("click", async() => {
+            console.log("Sentiment Analysis: Button clicked");
+            const text = textInput.value.trim();
+            const language = languageSelect.value;
+
+            if (!text) {
+                console.warn("Sentiment Analysis: Empty text input");
+                errorDiv.innerText = "Please enter some text to analyze.";
+                errorDiv.classList.remove("hidden");
+                return;
+            }
+
+            errorDiv.classList.add("hidden");
+            resultDiv.classList.add("hidden");
+            button.disabled = true;
+            button.querySelector("#sentiment-button-text").innerText = "Analyzing...";
+            button.querySelector("#sentiment-loading-spinner").classList.remove("hidden");
+
+            try {
+                console.log("Sentiment Analysis: Sending request to /api/analyze-sentiment", {
+                    text: text.substring(0, 50) + "...",
+                    language
+                });
+                const response = await fetch("/api/analyze-sentiment", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        text,
+                        language
+                    }),
+                    signal: AbortSignal.timeout(30000)
+                });
+
+                console.log("Sentiment Analysis: Response received", {
+                    status: response.status
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    console.error("Sentiment Analysis: API error", data);
+                    throw new Error(data.error || "API request failed");
+                }
+
+                console.log("Sentiment Analysis: Success", data);
+                resultDiv.classList.remove("hidden");
+                label.innerText = data.sentiment || "Unknown";
+                label.className = `px-3 py-1 rounded-full text-sm font-medium ${getSentimentClass(data.sentiment)}`;
+                posScore.innerText = data.positive != null ? `${data.positive}%` : "0%";
+                neuScore.innerText = data.neutral != null ? `${data.neutral}%` : "0%";
+                negScore.innerText = data.negative != null ? `${data.negative}%` : "0%";
+                posBar.style.width = data.positive != null ? `${data.positive}%` : "0%";
+                posBar.setAttribute("aria-valuenow", data.positive || 0);
+                neuBar.style.width = data.neutral != null ? `${data.neutral}%` : "0%";
+                neuBar.setAttribute("aria-valuenow", data.neutral || 0);
+                negBar.style.width = data.negative != null ? `${data.negative}%` : "0%";
+                negBar.setAttribute("aria-valuenow", data.negative || 0);
+                insights.innerText = data.insights || "No insights provided.";
+            } catch (err) {
+                console.error("Sentiment Analysis: Error", err);
+                let errorText = "Une erreur s'est produite. Veuillez réessayer.";
+                if (err.name === "TimeoutError") errorText = "Requête trop longue. Veuillez réessayer.";
+                else if (err.name === "TypeError") errorText = "Erreur réseau : impossible de contacter le serveur.";
+                errorDiv.innerText = errorText;
+                errorDiv.classList.remove("hidden");
+            } finally {
+                button.disabled = false;
+                button.querySelector("#sentiment-button-text").innerText = "Analyze Sentiment";
+                button.querySelector("#sentiment-loading-spinner").classList.add("hidden");
+            }
+        });
+
+        function getSentimentClass(sentiment) {
+            switch (sentiment) {
+                case "Positive":
+                    return "bg-success-100 text-success";
+                case "Negative":
+                    return "bg-error-100 text-error";
+                default:
+                    return "bg-yellow-100 text-yellow-600";
+            }
+        }
+    });
+</script>
+
+                <!-- Movie Recommendation Section -->
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-12 h-12 bg-rec-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-rec" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-800">Movie Recommendation Engine</h3>
+                            <p class="text-gray-600">Powered by MongoDB Atlas Vector Search</p>
+                        </div>
+                    </div>
+                    <div class="space-y-4 mb-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-800 mb-2" for="rec-prompt">Describe Desired Movie Style</label>
+                            <textarea id="rec-prompt" aria-label="Enter desired movie style or genres" class="input-field-rec h-24 resize-none" maxlength="10000" placeholder="E.g., an action movie with humor"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-800 mb-2" for="rec-budget">Budget Range</label>
+                            <select id="rec-budget" aria-label="Select budget range for movie recommendations" class="input-field-rec">
+                        <option value="budget">Standard </option>
+                        <option value="mid-range">Mid-range </option>
+                        <option value="premium">Premium </option>
+                    </select>
+                        </div>
+                    </div>
+                    <button aria-label="Generate movie recommendations" class="btn-rec w-full mb-4 flex items-center justify-center" id="rec-button">
+                <span id="rec-button-text">Generate Recommendations</span>
+                <svg id="rec-loading-spinner" class="hidden w-5 h-5 ml-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+            </button>
+                    <div id="rec-error" class="hidden text-error text-sm mb-4" role="alert"></div>
+                    <div id="rec-result" class="hidden" aria-live="polite">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h5 class="font-semibold text-gray-800 mb-3">Recommended Movies:</h5>
+                            <div id="rec-list" class="space-y-3"></div>
+                        </div>
+                    </div>
+                </div>
+    </section>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        console.log("Initializing Movie Recommendation System");
+
+        function initializeMovieRecommendation() {
+            const button = document.getElementById("rec-button");
+            const promptText = document.getElementById("rec-prompt");
+            const budget = document.getElementById("rec-budget");
+            const resultDiv = document.getElementById("rec-result");
+            const recList = document.getElementById("rec-list");
+            const errorDiv = document.getElementById("rec-error");
+
+            if (!button || !promptText || !budget || !resultDiv || !recList || !errorDiv) {
+                console.error("Movie Recommendation: Missing DOM elements", {
+                    button: !!button,
+                    promptText: !!promptText,
+                    budget: !!budget,
+                    resultDiv: !!resultDiv,
+                    recList: !!recList,
+                    errorDiv: !!errorDiv
+                });
+                errorDiv.innerText = "Error: Interface not initialized properly.";
+                errorDiv.classList.remove("hidden");
+                return;
+            }
+
+            const debounce = (callback, delay) => {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => callback(...args), delay);
+                };
+            };
+
+            const handleRecommendation = debounce(async () => {
+                console.log("Movie Recommendation: Button clicked");
+                const prompt = promptText.value.trim();
+                const budgetValue = budget.value.toLowerCase();
+
+                const validBudgets = ["budget", "mid-range", "premium"];
+                if (!prompt) {
+                    console.warn("Movie Recommendation: Empty prompt");
+                    errorDiv.innerText = "Please enter a film style or genre.";
+                    errorDiv.classList.remove("hidden");
+                    return;
+                }
+                if (!validBudgets.includes(budgetValue)) {
+                    console.warn("Movie Recommendation: Invalid budget value", budgetValue);
+                    errorDiv.innerText = "Please select a valid budget (Budget, Mid-range, or Premium).";
+                    errorDiv.classList.remove("hidden");
+                    return;
+                }
+
+                errorDiv.classList.add("hidden");
+                resultDiv.classList.add("hidden");
+                button.disabled = true;
+                const buttonText = button.querySelector("#rec-button-text");
+                const loadingSpinner = button.querySelector("#rec-loading-spinner");
+                if (buttonText && loadingSpinner) {
+                    buttonText.textContent = "Generating...";
+                    loadingSpinner.classList.remove("hidden");
+                }
+
+                try {
+                    console.log("Movie Recommendation: Sending request to /api/recommend", {
+                        prompt: prompt.substring(0, 50) + (prompt.length > 50 ? "..." : ""),
+                        budget: budgetValue
+                    });
+
+                    const response = await fetch("/api/recommend", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Accept": "application/json"
+                        },
+                        body: JSON.stringify({ prompt, budget: budgetValue }),
+                        signal: AbortSignal.timeout(30000)
+                    });
+
+                    const data = await response.json();
+                    console.log("Movie Recommendation: Response received", { status: response.status });
+
+                    if (!response.ok) {
+                        console.error("Movie Recommendation: API error", data);
+                        throw new Error(data.error || "Failed to fetch recommendations");
+                    }
+
+                    resultDiv.classList.remove("hidden");
+                    recList.innerHTML = "";
+                    if (!data.recommendations || data.recommendations.length === 0) {
+                        recList.innerHTML = '<p class="text-gray-300">No movies found for this description.</p>';
+                    } else {
+                        data.recommendations.forEach(movie => {
+                            const movieItem = document.createElement("div");
+                            movieItem.className = "p-4 border-b border-gray-600 text-dark";
+                            movieItem.innerHTML = `
+                                <strong class="text-dark">${movie.name || "Unknown Title"}</strong><br>
+                                <span class="text-sm">Genres: ${movie.genres.length ? movie.genres.join(", ") : "N/A"}</span><br>
+                                <span class="text-sm font-medium">Price: $${movie.price}M</span><br>
+                                <span class="text-sm">Match Score: ${Number(movie.score).toFixed(2)}%</span>
+                            `;
+                            recList.appendChild(movieItem);
+                        });
+                    }
+                    console.log("Movie Recommendation: Success", { recommendations: data.recommendations });
+                } catch (err) {
+                    console.error("Movie Recommendation: Error", err);
+                    let errorText = "An error occurred. Please try again.";
+                    if (err.name === "TimeoutError") {
+                        errorText = "Request timed out. Please try again.";
+                    } else if (err.name === "TypeError") {
+                        errorText = "Network error: Unable to contact the server.";
+                    } else if (err.message) {
+                        errorText = err.message;
+                    }
+                    errorDiv.innerText = errorText;
+                    errorDiv.classList.remove("hidden");
+                    resultDiv.classList.remove("hidden");
+                } finally {
+                    button.disabled = false;
+                    if (buttonText && loadingSpinner) {
+                        buttonText.textContent = "Generate Recommendations";
+                        loadingSpinner.classList.add("hidden");
+                    }
+                }
+            }, 500);
+
+            button.addEventListener("click", handleRecommendation);
+            promptText.addEventListener("keypress", (e) => {
+                if (e.key === "Enter" && !button.disabled) {
+                    handleRecommendation();
+                }
+            });
+        }
+
+        initializeMovieRecommendation();
+    });
+</script>
+    <style>
+        /* Styles pour Sentiment Analysis */
+        
+        .btn-accent {
+            background-color: #10b981;
+            color: #ffffff;
+            padding: 0.5rem 2rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background-color 0.2s ease-in-out;
+        }
+        
+        .btn-accent:hover {
+            background-color: #059669;
+        }
+        
+        .btn-accent:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .input-field-sentiment {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .input-field-sentiment:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 2px #d1fae5;
+        }
+        
+        .bg-accent-100 {
+            background-color: #d1fae5;
+        }
+        
+        .text-accent {
+            color: #10b981;
+        }
+        
+        .text-error {
+            color: #dc2626;
+        }
+        
+        .bg-success-100 {
+            background-color: #d1fae5;
+        }
+        
+        .text-success {
+            color: #10b981;
+        }
+        
+        .bg-error-100 {
+            background-color: #fee2e2;
+        }
+        
+        .progress-positive {
+            background-color: #10b981;
+        }
+        
+        .progress-neutral {
+            background-color: #f59e0b;
+        }
+        
+        .progress-negative {
+            background-color: #dc2626;
+        }
+        /* Styles pour Movie Recommendation */
+        
+        .btn-rec {
+            background-color: #7c3aed;
+            color: #ffffff;
+            padding: 0.5rem 2rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background-color 0.2s ease-in-out;
+        }
+        
+        .btn-rec:hover {
+            background-color: #6d28d9;
+        }
+        
+        .btn-rec:disabled {
+            background-color: #d1d5db;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .input-field-rec {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .input-field-rec:focus {
+            outline: none;
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 2px #e9d5ff;
+        }
+        
+        .bg-rec-100 {
+            background-color: #e9d5ff;
+        }
+        
+        .text-rec {
+            color: #7c3aed;
+        }
+    </style>
+
+
+    <!-- Data Visualization Showcase -->
+    <section id="data-viz" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-primary mb-4">Interactive Data Visualizations</h2>
+                <p class="text-xl text-text-secondary max-w-3xl mx-auto">
+                    Dynamic charts and dashboards built with D3.js, Plotly, and custom visualization libraries
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8 mb-12">
+                <!-- Sales Performance Dashboard -->
+                <div class="bg-white rounded-2xl shadow-interactive p-6 border border-surface-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-semibold text-primary">Sales Performance Dashboard</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="updateSalesChart('monthly', event)" class="px-3 py-1 text-sm bg-primary text-white rounded-md">Monthly</button>
+                            <button onclick="updateSalesChart('quarterly', event)" class="px-3 py-1 text-sm bg-surface-200 text-text-secondary rounded-md">Quarterly</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-surface-50 rounded-lg p-4 mb-4 relative">
+                        <svg id="sales-chart" class="w-full h-64" viewBox="0 0 500 250">
+                            <!-- Chart Background -->
+                            <rect width="500" height="250" fill="#f7fafc"/>
+                            
+                            <!-- Grid Lines -->
+                            <g stroke="#e2e8f0" stroke-width="1" opacity="0.5">
+                                <line x1="60" y1="30" x2="60" y2="220"/>
+                                <line x1="60" y1="220" x2="470" y2="220"/>
+                                <line x1="60" y1="180" x2="470" y2="180"/>
+                                <line x1="60" y1="140" x2="470" y2="140"/>
+                                <line x1="60" y1="100" x2="470" y2="100"/>
+                                <line x1="60" y1="60" x2="470" y2="60"/>
+                            </g>
+                            
+                            <!-- Sales Line -->
+                            <polyline id="sales-line" points="60,200 120,180 180,140 240,120 300,100 360,80 420,60 470,50" fill="none" stroke="#38b2ac" stroke-width="3" stroke-linecap="round"/>
+                            
+                            <!-- Target Line -->
+                            <line x1="60" y1="90" x2="470" y2="90" stroke="#ed8936" stroke-width="2" stroke-dasharray="5,5"/>
+                            
+                            <!-- Data Points -->
+                            <g id="sales-points">
+                                <circle cx="60" cy="200" r="6" fill="#38b2ac" class="data-point" data-index="0"/>
+                                <circle cx="120" cy="180" r="6" fill="#38b2ac" class="data-point" data-index="1"/>
+                                <circle cx="180" cy="140" r="6" fill="#38b2ac" class="data-point" data-index="2"/>
+                                <circle cx="240" cy="120" r="6" fill="#38b2ac" class="data-point" data-index="3"/>
+                                <circle cx="300" cy="100" r="6" fill="#38b2ac" class="data-point" data-index="4"/>
+                                <circle cx="360" cy="80" r="6" fill="#38b2ac" class="data-point" data-index="5"/>
+                                <circle cx="420" cy="60" r="6" fill="#38b2ac" class="data-point" data-index="6"/>
+                                <circle cx="470" cy="50" r="6" fill="#38b2ac" class="data-point" data-index="7"/>
+                            </g>
+                            
+                            <!-- Labels -->
+                            <g fill="#718096" font-size="12" text-anchor="middle">
+                                <text x="60" y="240">Jan</text>
+                                <text x="120" y="240">Feb</text>
+                                <text x="180" y="240">Mar</text>
+                                <text x="240" y="240">Apr</text>
+                                <text x="300" y="240">May</text>
+                                <text x="360" y="240">Jun</text>
+                                <text x="420" y="240">Jul</text>
+                                <text x="470" y="240">Aug</text>
+                            </g>
+                            
+                            <!-- Y-axis Labels -->
+                            <g fill="#718096" font-size="10" text-anchor="end">
+                                <text x="55" y="225">$0</text>
+                                <text x="55" y="185">$50K</text>
+                                <text x="55" y="145">$100K</text>
+                                <text x="55" y="105">$150K</text>
+                                <text x="55" y="65">$200K</text>
+                            </g>
+                            
+                            <!-- Legend -->
+                            <g font-size="12">
+                                <line x1="80" y1="15" x2="100" y2="15" stroke="#38b2ac" stroke-width="2"/>
+                                <text x="105" y="19" fill="#2d3748">Actual Sales</text>
+                                <line x1="200" y1="15" x2="220" y2="15" stroke="#ed8936" stroke-width="2" stroke-dasharray="3,3"/>
+                                <text x="225" y="19" fill="#2d3748">Target</text>
+                            </g>
+                        </svg>
+                        <!-- Tooltip for Data Points -->
+                        <div id="sales-tooltip" class="absolute pointer-events-none bg-gray-900 text-white text-xs rounded px-3 py-2 shadow-lg opacity-0 transition-opacity duration-200" style="z-index:10"></div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-success" id="total-revenue">$1.2M</div>
+                            <div class="text-sm text-text-secondary">Total Revenue</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-primary" id="growth-rate">+23%</div>
+                            <div class="text-sm text-text-secondary">Growth Rate</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-accent" id="target-achievement">108%</div>
+                            <div class="text-sm text-text-secondary">Target Achievement</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-semibold text-gray-800">Customer Segmentation</h3>
+                        <button onclick="animateSegmentation()" class="text-gray-600 hover:text-gray-800 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="relative bg-gray-50 rounded-lg p-4 mb-4">
+                        <svg id="segmentation-chart" class="w-full h-64 md:h-80 lg:h-96" viewBox="0 0 300 250" preserveAspectRatio="xMidYMid meet">
+                            <!-- Pie Chart -->
+                            <g id="pie-group" transform="translate(150,125)">
+                                <!-- High Value Customers -->
+                                <path id="segment-1" d="M 0,-80 A 80,80 0 0,1 56.57,-56.57 L 0,0 Z" fill="#38a169" class="cursor-pointer hover:opacity-80 transition-opacity" data-segment="High Value" data-percentage="32" data-customers="1247"/>
+                                <!-- Regular Customers -->
+                                <path id="segment-2" d="M 56.57,-56.57 A 80,80 0 0,1 56.57,56.57 L 0,0 Z" fill="#38b2ac" class="cursor-pointer hover:opacity-80 transition-opacity" data-segment="Regular" data-percentage="41" data-customers="1598"/>
+                                <!-- At-Risk Customers -->
+                                <path id="segment-3" d="M 56.57,56.57 A 80,80 0 0,1 -56.57,56.57 L 0,0 Z" fill="#ed8936" class="cursor-pointer hover:opacity-80 transition-opacity" data-segment="At-Risk" data-percentage="18" data-customers="702"/>
+                                <!-- New Customers -->
+                                <path id="segment-4" d="M -56.57,56.57 A 80,80 0 0,1 0,-80 L 0,0 Z" fill="#d69e2e" class="cursor-pointer hover:opacity-80 transition-opacity" data-segment="New" data-percentage="9" data-customers="351"/>
+                            </g>
+                            <!-- Labels -->
+                            <g font-size="12" text-anchor="middle" fill="#2d3748" class="pointer-events-none">
+                                <text x="190" y="80" class="label-high-value">High Value</text>
+                                <text x="210" y="170" class="label-regular">Regular</text>
+                                <text x="110" y="170" class="label-at-risk">At-Risk</text>
+                                <text x="90" y="80" class="label-new">New</text>
+                            </g>
+                        </svg>
+                        <!-- Tooltip -->
+                        <div id="tooltip" class="absolute hidden bg-gray-800 text-white text-sm rounded p-2 pointer-events-none">
+                            <span id="tooltip-text"></span>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between cursor-pointer legend-item" data-segment-id="segment-1">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-success rounded-full"></div>
+                                <span class="text-sm">High Value (32%)</span>
+                            </div>
+                            <span class="text-sm font-medium">1,247 customers</span>
+                        </div>
+                        <div class="flex items-center justify-between cursor-pointer legend-item" data-segment-id="segment-2">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-secondary rounded-full"></div>
+                                <span class="text-sm">Regular (41%)</span>
+                            </div>
+                            <span class="text-sm font-medium">1,598 customers</span>
+                        </div>
+                        <div class="flex items-center justify-between cursor-pointer legend-item" data-segment-id="segment-3">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-accent rounded-full"></div>
+                                <span class="text-sm">At-Risk (18%)</span>
+                            </div>
+                            <span class="text-sm font-medium">702 customers</span>
+                        </div>
+                        <div class="flex items-center justify-between cursor-pointer legend-item" data-segment-id="segment-4">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-warning rounded-full"></div>
+                                <span class="text-sm">New (9%)</span>
+                            </div>
+                            <span class="text-sm font-medium">351 customers</span>
+                        </div>
+                    </div>
+
+                    <script>
+                        // Animation for pie chart rotation
+                        function animateSegmentation() {
+                            const pieGroup = document.getElementById('pie-group');
+                            let rotation = 0;
+                            const animate = () => {
+                                rotation = (rotation + 1) % 360;
+                                pieGroup.setAttribute('transform', `translate(150,125) rotate(${rotation})`);
+                                requestAnimationFrame(animate);
+                            };
+                            requestAnimationFrame(animate);
+                        }
+
+                        // Tooltip functionality
+                        const segments = document.querySelectorAll('#segmentation-chart path');
+                        const tooltip = document.getElementById('tooltip');
+                        const tooltipText = document.getElementById('tooltip-text');
+
+                        segments.forEach(segment => {
+                            segment.addEventListener('mousemove', (e) => {
+                                const segmentName = segment.getAttribute('data-segment');
+                                const percentage = segment.getAttribute('data-percentage');
+                                const customers = segment.getAttribute('data-customers');
+                                tooltipText.textContent = `${segmentName}: ${percentage}% (${customers} customers)`;
+                                tooltip.style.left = `${e.clientX + 10}px`;
+                                tooltip.style.top = `${e.clientY + 10}px`;
+                                tooltip.classList.remove('hidden');
+                            });
+
+                            segment.addEventListener('mouseleave', () => {
+                                tooltip.classList.add('hidden');
+                            });
+
+                            segment.addEventListener('click', () => {
+                                segments.forEach(s => s.classList.remove('scale-110'));
+                                segment.classList.add('scale-110');
+                                setTimeout(() => segment.classList.remove('scale-110'), 300);
+                            });
+                        });
+
+                        // Legend interactivity
+                        const legendItems = document.querySelectorAll('.legend-item');
+                        legendItems.forEach(item => {
+                            item.addEventListener('mouseover', () => {
+                                const segmentId = item.getAttribute('data-segment-id');
+                                const segment = document.getElementById(segmentId);
+                                segment.classList.add('opacity-100');
+                                segments.forEach(s => {
+                                    if (s !== segment) s.classList.add('opacity-50');
+                                });
+                            });
+
+                            item.addEventListener('mouseout', () => {
+                                segments.forEach(s => s.classList.remove('opacity-50', 'opacity-100'));
+                            });
+                        });
+                    </script>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Footer -->
+    <footer class="bg-primary-900 text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <!-- Brand -->
+                <div class="md:col-span-2">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <svg class="w-8 h-8 text-secondary" viewBox="0 0 32 32" fill="currentColor">
+                            <path d="M16 2L3 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-13-5z"/>
+                            <path d="M12 14l2 2 6-6" stroke="white" stroke-width="2" fill="none"/>
+                        </svg>
+                        <span class="text-2xl font-bold">DataCraft Portfolio</span>
+                    </div>
+                    <p class="text-primary-200 mb-6 max-w-md">
+                        Transforming complex data into strategic advantage through analytical rigor and compelling storytelling.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="https://www.linkedin.com/in/timothee-nkwar-728377222/" target="_blank" class="text-primary-200 hover:text-white transition-smooth">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </a>
+                        <a href="https://github.com/TimotheeNkwar?tab=repositories" target="_blank" class="text-primary-200 hover:text-white transition-smooth">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.236 3.221 1.236 5.479 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="{{ url_for('show_page', page='case_studies') }}" class="text-primary-200 hover:text-white transition-smooth">Case Studies</a></li>
+                        <li><a href="{{ url_for('show_page', page='about') }}" class="text-primary-200 hover:text-white transition-smooth">About Me</a></li>
+                        <li><a href="{{ url_for('show_page', page='skills_tools') }}" class="text-primary-200 hover:text-white transition-smooth">Skills & Tools</a></li>
+                        <li><a href="{{ url_for('show_page', page='blog_insights') }}" class="text-primary-200 hover:text-white transition-smooth">Blog & Insights</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact Info -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Get in Touch</h3>
+                    <ul class="space-y-2">
+                        <li class="text-primary-200">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg> timotheenkwar16@gmail.com
+                        </li>
+                        <li class="text-primary-200">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg> Nicosia, Cyprus
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-primary-800 mt-12 pt-8 text-center text-primary-200">
+                <p>&copy; 2025 Timothee Nkwar. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        }
+
+        // Smooth scrolling for section navigation
+        function scrollToSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        }
+
+
+        // R Demo
+        function runRDemo() {
+            const output = document.getElementById('r-output');
+            output.classList.remove('hidden');
+
+            setTimeout(() => {
+                const controlMean = (Math.random() * 0.5 + 2.0).toFixed(2);
+                const treatmentMean = (Math.random() * 0.5 + 2.5).toFixed(2);
+                const lift = (((treatmentMean / controlMean) - 1) * 100).toFixed(1);
+
+                output.innerHTML = `
+                    <div class="text-secondary">A/B Test Results:</div>
+                    <div>Control Mean: ${controlMean}</div>
+                    <div>Treatment Mean: ${treatmentMean}</div>
+                    <div>Lift: +${lift}%</div>
+                    <div class="text-success">Statistically Significant: ${Math.random() > 0.3 ? 'Yes' : 'No'}</div>
+                `;
+            }, 500);
+        }
+
+        function resetRDemo() {
+            const output = document.getElementById('r-output');
+            output.classList.add('hidden');
+        }
+
+
+        // Data Visualization Functions
+        function updateSalesChart(period) {
+            const buttons = document.querySelectorAll('#data-viz button');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('bg-surface-200', 'text-text-secondary');
+            });
+            event.target.classList.remove('bg-surface-200', 'text-text-secondary');
+            event.target.classList.add('bg-primary', 'text-white');
+
+            const salesLine = document.getElementById('sales-line');
+            if (period === 'quarterly') {
+                salesLine.setAttribute('points', '60,180 150,160 240,120 330,100 420,80 470,60');
+            } else {
+                salesLine.setAttribute('points', '60,200 120,180 180,140 240,120 300,100 360,80 420,60 470,50');
+            }
+        }
+
+        function animateSegmentation() {
+            const segments = document.querySelectorAll('[id^="segment-"]');
+            segments.forEach((segment, index) => {
+                setTimeout(() => {
+                    segment.style.transform = 'scale(1.1)';
+                    setTimeout(() => {
+                        segment.style.transform = 'scale(1)';
+                    }, 200);
+                }, index * 100);
+            });
+        }
+
+        function updateHeatmap(period) {
+            const buttons = document.querySelectorAll('#data-viz button');
+            buttons.forEach(btn => {
+                if (btn.onclick && btn.onclick.toString().includes('updateHeatmap')) {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-surface-200', 'text-text-secondary');
+                }
+            });
+            event.target.classList.remove('bg-surface-200', 'text-text-secondary');
+            event.target.classList.add('bg-primary', 'text-white');
+
+            generateHeatmapData(period);
+        }
+
+        function generateHeatmapData(period) {
+            const grid = document.getElementById('heatmap-grid');
+            const stats = document.getElementById('heatmap-stats');
+
+            grid.innerHTML = '';
+
+            const days = period === 'week' ? 7 : 30;
+            const totalSessions = Math.floor(Math.random() * 1000) + 2000;
+
+            for (let i = 0; i < days * 24; i++) {
+                const intensity = Math.random();
+                let bgClass = 'bg-surface-200';
+
+                if (intensity > 0.8) bgClass = 'bg-primary-700';
+                else if (intensity > 0.6) bgClass = 'bg-primary-500';
+                else if (intensity > 0.4) bgClass = 'bg-primary-300';
+                else if (intensity > 0.2) bgClass = 'bg-primary-100';
+
+                const cell = document.createElement('div');
+                cell.className = `w-3 h-3 ${bgClass} rounded-sm cursor-pointer hover:opacity-80 transition-opacity`;
+                cell.title = `${Math.floor(intensity * 100)} sessions`;
+                grid.appendChild(cell);
+            }
+
+            stats.textContent = `${totalSessions.toLocaleString()} total sessions this ${period}`;
+        }
+
+        // Initialize heatmap on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            generateHeatmapData('week');
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Interactive Sales Chart Data
+        const salesData = {
+            monthly: {
+                points: [{
+                    x: 60,
+                    y: 200,
+                    label: 'Jan',
+                    value: 120000,
+                    growth: 8,
+                    target: 110000
+                }, {
+                    x: 120,
+                    y: 180,
+                    label: 'Feb',
+                    value: 135000,
+                    growth: 12,
+                    target: 120000
+                }, {
+                    x: 180,
+                    y: 140,
+                    label: 'Mar',
+                    value: 170000,
+                    growth: 15,
+                    target: 150000
+                }, {
+                    x: 240,
+                    y: 120,
+                    label: 'Apr',
+                    value: 190000,
+                    growth: 18,
+                    target: 170000
+                }, {
+                    x: 300,
+                    y: 100,
+                    label: 'May',
+                    value: 210000,
+                    growth: 22,
+                    target: 190000
+                }, {
+                    x: 360,
+                    y: 80,
+                    label: 'Jun',
+                    value: 230000,
+                    growth: 25,
+                    target: 210000
+                }, {
+                    x: 420,
+                    y: 60,
+                    label: 'Jul',
+                    value: 250000,
+                    growth: 28,
+                    target: 230000
+                }, {
+                    x: 470,
+                    y: 50,
+                    label: 'Aug',
+                    value: 260000,
+                    growth: 30,
+                    target: 240000
+                }],
+                totalRevenue: "$1.2M",
+                growthRate: "+23%",
+                targetAchievement: "108%"
+            },
+            quarterly: {
+                points: [{
+                    x: 60,
+                    y: 180,
+                    label: 'Q1',
+                    value: 425000,
+                    growth: 10,
+                    target: 400000
+                }, {
+                    x: 150,
+                    y: 160,
+                    label: 'Q2',
+                    value: 480000,
+                    growth: 14,
+                    target: 450000
+                }, {
+                    x: 240,
+                    y: 120,
+                    label: 'Q3',
+                    value: 560000,
+                    growth: 18,
+                    target: 500000
+                }, {
+                    x: 330,
+                    y: 100,
+                    label: 'Q4',
+                    value: 600000,
+                    growth: 22,
+                    target: 550000
+                }, {
+                    x: 420,
+                    y: 80,
+                    label: 'Q1',
+                    value: 650000,
+                    growth: 25,
+                    target: 600000
+                }, {
+                    x: 470,
+                    y: 60,
+                    label: 'Q2',
+                    value: 700000,
+                    growth: 28,
+                    target: 650000
+                }],
+                totalRevenue: "$3.4M",
+                growthRate: "+31%",
+                targetAchievement: "115%"
+            }
+        };
+
+        // Update Sales Chart with Animation and Interactivity
+        function updateSalesChart(period, event) {
+            const chart = document.getElementById('sales-chart');
+            const salesLine = document.getElementById('sales-line');
+            const salesPoints = document.querySelectorAll('#sales-points .data-point');
+            const tooltip = document.getElementById('sales-tooltip');
+            const buttons = document.querySelectorAll('#data-viz button');
+            const data = salesData[period];
+
+            // Button state
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('bg-surface-200', 'text-text-secondary');
+            });
+            if (event && event.target) {
+                event.target.classList.remove('bg-surface-200', 'text-text-secondary');
+                event.target.classList.add('bg-primary', 'text-white');
+            }
+
+            // Animate line and points
+            let pointsStr = data.points.map(pt => `${pt.x},${pt.y}`).join(' ');
+            salesLine.setAttribute('points', pointsStr);
+
+            // Animate points and update data attributes
+            salesPoints.forEach((circle, idx) => {
+                if (data.points[idx]) {
+                    circle.setAttribute('cx', data.points[idx].x);
+                    circle.setAttribute('cy', data.points[idx].y);
+                    circle.setAttribute('data-index', idx);
+                    circle.style.opacity = 1;
+                } else {
+                    circle.style.opacity = 0;
+                }
+            });
+
+            // Update stats
+            document.getElementById('total-revenue').textContent = data.totalRevenue;
+            document.getElementById('growth-rate').textContent = data.growthRate;
+            document.getElementById('target-achievement').textContent = data.targetAchievement;
+
+            // Tooltip interactivity
+            salesPoints.forEach(circle => {
+                circle.onmouseenter = function(e) {
+                    const idx = parseInt(circle.getAttribute('data-index'));
+                    const pt = data.points[idx];
+                    tooltip.innerHTML = `
+                        <div class="font-semibold">${pt.label}</div>
+                        <div>Revenue: <span class="text-success">$${pt.value.toLocaleString()}</span></div>
+                        <div>Growth: <span class="text-primary">+${pt.growth}%</span></div>
+                        <div>Target: <span class="text-accent">$${pt.target.toLocaleString()}</span></div>
+                    `;
+                    tooltip.style.opacity = 1;
+                    // Position tooltip near the point
+                    const svgRect = chart.getBoundingClientRect();
+                    const circleRect = circle.getBoundingClientRect();
+                    tooltip.style.left = (circleRect.left - svgRect.left + 20) + 'px';
+                    tooltip.style.top = (circleRect.top - svgRect.top - 10) + 'px';
+                };
+                circle.onmouseleave = function() {
+                    tooltip.style.opacity = 0;
+                };
+                circle.onmousemove = function(e) {
+                    const svgRect = chart.getBoundingClientRect();
+                    tooltip.style.left = (e.clientX - svgRect.left + 20) + 'px';
+                    tooltip.style.top = (e.clientY - svgRect.top - 10) + 'px';
+                };
+                // Click to highlight
+                circle.onclick = function() {
+                    salesPoints.forEach(c => c.setAttribute('stroke', 'none'));
+                    circle.setAttribute('stroke', '#ed8936');
+                    circle.setAttribute('stroke-width', '3');
+                    setTimeout(() => {
+                        circle.setAttribute('stroke', 'none');
+                    }, 1200);
+                };
+            });
+        }
+
+        // Initialize chart on load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSalesChart('monthly', {
+                target: document.querySelector('#data-viz button')
+            });
+        });
+        filterPosts('all');
+    </script>
+    <script id="dhws-dataInjector" src="../static/js/dhws-data-injector.js"></script>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+</body>
+
+</html>

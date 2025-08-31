@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Primary Colors */
+  --color-primary: #1a365d; /* Deep navy - analytical authority */
+  --color-primary-50: #e6f3ff;
+  --color-primary-100: #b3d9ff;
+  --color-primary-200: #80bfff;
+  --color-primary-300: #4da6ff;
+  --color-primary-400: #1a8cff;
+  --color-primary-500: #1a365d; /* blue-900 equivalent */
+  --color-primary-600: #153052;
+  --color-primary-700: #102947;
+  --color-primary-800: #0b223c;
+  --color-primary-900: #061b31;
+
+  /* Secondary Colors */
+  --color-secondary: #38b2ac; /* Teal - innovation moments */
+  --color-secondary-50: #e6fffa;
+  --color-secondary-100: #b2f5ea;
+  --color-secondary-200: #81e6d9;
+  --color-secondary-300: #4fd1c7;
+  --color-secondary-400: #38b2ac; /* teal-500 equivalent */
+  --color-secondary-500: #319795;
+  --color-secondary-600: #2c7a7b;
+  --color-secondary-700: #285e61;
+  --color-secondary-800: #234e52;
+  --color-secondary-900: #1d4044;
+
+  /* Accent Colors */
+  --color-accent: #ed8936; /* Orange - warm action prompts */
+  --color-accent-50: #fffaf0;
+  --color-accent-100: #feebc8;
+  --color-accent-200: #fbd38d;
+  --color-accent-300: #f6ad55;
+  --color-accent-400: #ed8936; /* orange-400 equivalent */
+  --color-accent-500: #dd6b20;
+  --color-accent-600: #c05621;
+  --color-accent-700: #9c4221;
+  --color-accent-800: #7b341e;
+  --color-accent-900: #652b19;
+
+  /* Background Colors */
+  --color-background: #ffffff; /* White - clean canvas */
+  --color-surface: #f7fafc; /* Light gray - subtle separation */
+  --color-surface-50: #f7fafc; /* gray-50 equivalent */
+  --color-surface-100: #edf2f7;
+  --color-surface-200: #e2e8f0;
+  --color-surface-300: #cbd5e0;
+
+  /* Text Colors */
+  --color-text-primary: #2d3748; /* Dark gray - extended reading */
+  --color-text-secondary: #718096; /* Medium gray - supporting info */
+  --color-text-primary-600: #2d3748; /* gray-700 equivalent */
+  --color-text-secondary-500: #718096; /* gray-500 equivalent */
+
+  /* Status Colors */
+  --color-success: #38a169; /* Green - positive outcomes */
+  --color-success-50: #f0fff4;
+  --color-success-100: #c6f6d5;
+  --color-success-200: #9ae6b4;
+  --color-success-300: #68d391;
+  --color-success-400: #48bb78;
+  --color-success-500: #38a169; /* green-600 equivalent */
+  --color-success-600: #2f855a;
+  --color-success-700: #276749;
+  --color-success-800: #22543d;
+  --color-success-900: #1c4532;
+
+  --color-warning: #d69e2e; /* Yellow - thoughtful caution */
+  --color-warning-50: #fffff0;
+  --color-warning-100: #fefcbf;
+  --color-warning-200: #faf089;
+  --color-warning-300: #f6e05e;
+  --color-warning-400: #ecc94b;
+  --color-warning-500: #d69e2e; /* yellow-600 equivalent */
+  --color-warning-600: #b7791f;
+  --color-warning-700: #975a16;
+  --color-warning-800: #744210;
+  --color-warning-900: #5f370e;
+
+  --color-error: #e53e3e; /* Red - problem identification */
+  --color-error-50: #fed7d7;
+  --color-error-100: #feb2b2;
+  --color-error-200: #fc8181;
+  --color-error-300: #f56565;
+  --color-error-400: #e53e3e; /* red-500 equivalent */
+  --color-error-500: #c53030;
+  --color-error-600: #9b2c2c;
+  --color-error-700: #742a2a;
+  --color-error-800: #63171b;
+  --color-error-900: #521b1b;
+
+  /* Animation Variables */
+  --transition-smooth: 300ms ease-in-out;
+  
+  /* Shadow Variables */
+  --shadow-subtle: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-interactive: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Base Styles */
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+    color: var(--color-text-primary);
+    background-color: var(--color-background);
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.2;
+  }
+
+  code, pre {
+    font-family: 'Fira Code', monospace;
+  }
+}
+
+/* Component Styles */
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:bg-secondary-600 focus:outline-none focus:ring-2 focus:ring-secondary-500 focus:ring-offset-2;
+  }
+
+  .btn-accent {
+    @apply bg-accent text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-subtle p-6 transition-all duration-300 hover:shadow-interactive;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 border border-surface-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-300;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+  }
+}
+
+/* Utility Classes */
+@layer utilities {
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+
+  .shadow-subtle {
+    box-shadow: var(--shadow-subtle);
+  }
+
+  .shadow-interactive {
+    box-shadow: var(--shadow-interactive);
+  }
+
+  .font-code {
+    font-family: 'Fira Code', monospace;
+  }
+}

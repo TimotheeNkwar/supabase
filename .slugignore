@@ -1,0 +1,7 @@
+# .slugignore
+*.csv
+*.mp4
+*.zip
+tests/
+docs/
+data/

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DataCraft Portfolio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+        header { background: #f8f8f8; padding: 1rem; }
+        nav ul { list-style: none; padding: 0; display: flex; gap: 1rem; }
+        nav a { text-decoration: none; color: #333; }
+        .skip-link { position: absolute; left: -9999px; }
+        .skip-link:focus { position: static; }
+        article { margin: 1rem; }
+        footer { background: #333; color: #fff; padding: 1rem; }
+        footer a { color: #fff; }
+        .text-primary { color: #007bff; }
+        .text-primary-700 { color: #0056b3; }
+        .text-primary-600 { color: #0069d9; }
+        .text-text-secondary { color: #666; }
+        .bg-primary-100 { background: #cce5ff; }
+        .bg-secondary-100 { background: #d6d8db; }
+        .bg-success-100 { background: #d4edda; }
+        .bg-accent-100 { background: #fff3cd; }
+        .bg-warning-100 { background: #ffeeba; }
+        .bg-surface-200 { background: #e9ecef; }
+        .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .animate-fade-in { animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.timestamp-text').forEach(element => {
+                const timestamp = element.getAttribute('data-initial');
+                element.textContent = new Date(timestamp).toLocaleString('en-US', {
+                    month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <header>
+        <a href="#main-content" class="skip-link">Skip to main content</a>
+        <nav>
+            <div><a href="/">Timothee Nkwar</a></div>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/case-studies">Case Studies</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/skills">Skills & Tools</a></li>
+                <li><a href="/blog">Blog</a></li>
+                <li><a href="/contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main id="main-content">
+        <h1>Welcome to DataCraft Portfolio</h1>
+        <p>Transforming complex data into strategic advantage through analytical rigor and compelling storytelling.</p>
+
+        <!-- Featured Posts Section -->
+        <section id="featured-posts" class="py-12 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl md:text-4xl font-bold text-primary mb-4">Featured Insights</h2>
+                    <p class="text-xl text-text-secondary max-w-3xl mx-auto">
+                        Latest deep-dives into data science methodologies, industry trends, and practical applications
+                    </p>
+                </div>
+                <div class="grid lg:grid-cols-3 gap-8">
+                    {% for article in articles %}
+                    <article class="card h-full post-card animate-fade-in" data-article-id="{{ article.id | safe }}">
+                        <div class="relative mb-4">
+                            <img src="{{ article.image | safe }}" alt="{{ article.title | safe }}" class="w-full h-48 object-cover rounded-lg" loading="lazy" onerror="this.src='https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'; this.onerror=null;" />
+                            <div class="absolute top-4 right-4">
+                                <span class="bg-white bg-opacity-90 text-text-secondary px-2 py-1 rounded text-sm">{{ article.read_time }} min read</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 p-4">
+                            <h4 class="text-sm font-medium text-primary-600 mb-2">{{ article.category | capitalize }}</h4>
+                            <h3 class="text-xl font-semibold text-primary mb-3 hover:text-primary-700 transition-smooth cursor-pointer">
+                                {{ article.title | safe }}
+                            </h3>
+                            <p class="text-text-secondary mb-4 line-clamp-3 text-base sm:text-sm md:text-base">
+                                {{ article.description | safe }}
+                            </p>
+                            <div class="flex items-center justify-between text-sm text-text-secondary mb-4">
+                                <span class="timestamp" data-article-id="{{ article.id | safe }}">
+                                    <span class="timestamp-text" data-initial="{{ article.timestamp | safe }}">Loading...</span>
+                                </span>
+                                <span class="view-count" data-article-id="{{ article.id | safe }}">
+                                    <span class="view-count-text">
+                                        {% if article.views >= 1000 %}
+                                            {{ (article.views / 1000) | float | round(1) }}K views
+                                        {% else %}
+                                            {{ article.views }} view{{ 's' if article.views != 1 else '' }}
+                                        {% endif %}
+                                    </span>
+                                </span>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                {% for tag in article.tags %}
+                                <span class="{{ 'bg-primary-100 text-primary' if tag in ['TensorFlow', 'Statistics', 'Python', 'Time Series', 'Machine Learning', 'Feature Engineering'] else 'bg-secondary-100 text-secondary' if tag in ['Deep Learning', 'Plotly', 'SQL', 'Database', 'Enterprise', 'Experimentation'] else 'bg-success-100 text-success' if tag in ['Healthcare', 'E-commerce', 'Finance', 'Industry Trends', '2025', 'Risk', 'ML'] else 'bg-accent-100 text-accent' if tag in ['Framework', 'Data Quality', 'A/B Testing', 'Best Practices'] else 'bg-warning-100 text-warning' if tag in ['Ethics', 'AI'] else 'bg-surface-200 text-text-secondary' }} px-2 py-1 text-xs rounded">
+                                    {{ tag | safe }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <a href="{{ url_for('show_article', id=article.id) }}" class="text-primary font-semibold hover:text-primary-700 transition-smooth block text-center" target="_blank">
+                            Read Full Article →
+                        </a>
+                    </article>
+                    {% else %}
+                    <div class="col-span-3 text-center text-text-secondary">
+                        No articles available.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div>
+            <a href="/">DataCraft Portfolio</a>
+            <p>Transforming complex data into strategic advantage through analytical rigor and compelling storytelling.</p>
+            <div class="social-links">
+                <a href="https://linkedin.com">LinkedIn</a>
+                <a href="https://github.com">GitHub</a>
+            </div>
+        </div>
+        <div>
+            <h3>Quick Links</h3>
+            <ul>
+                <li><a href="/case-studies">Case Studies</a></li>
+                <li><a href="/about">About Me</a></li>
+                <li><a href="/skills">Skills & Tools</a></li>
+                <li><a href="/blog">Blog & Insights</a></li>
+            </ul>
+        </div>
+        <div>
+            <h3>Get in Touch</h3>
+            <p><a href="mailto:timotheenkwar16@gmail.com">timotheenkwar16@gmail.com</a></p>
+            <p>Nicosia, Cyprus</p>
+        </div>
+        <p>© 2025 Timothee Nkwar. All rights reserved.</p>
+    </footer>
+</body>
+</html>

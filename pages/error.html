@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error {{ error_code }} - DataCraft Portfolio</title>
+    <meta name="description" content="An error occurred while processing your request.">
+    <meta name="author" content="Timothee Nkwar">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='images/icon.png') }}">
+</head>
+<body class="bg-background text-text-primary">
+
+    <!-- Navigation Header -->
+    <header class="bg-white shadow-subtle sticky top-0 z-50" role="banner">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" role="navigation" aria-label="Main navigation">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0">
+                    <a href="{{ url_for('show_page', page='homepage') }}" class="flex items-center space-x-2" aria-label="DataCraft Portfolio - Home">
+                        <svg class="w-8 h-8 text-primary" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+                            <path d="M16 2L3 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-13-5z"/>
+                            <path d="M12 14l2 2 6-6" stroke="white" stroke-width="2" fill="none"/>
+                        </svg>
+                        <span class="text-xl font-bold text-primary">Timothee Nkwar</span>
+                    </a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="{{ url_for('show_page', page='homepage') }}" class="btn-primary text-sm" aria-current="{% if request.endpoint == 'show_page' and request.view_args.page == 'homepage' %}page{% endif %}">Home</a>
+                        <a href="{{ url_for('show_page', page='case_studies') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" aria-current="{% if request.endpoint == 'show_page' and request.view_args.page == 'case_studies' %}page{% endif %}">Case Studies</a>
+                        <a href="{{ url_for('show_page', page='about') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" aria-current="{% if request.endpoint == 'show_page' and request.view_args.page == 'about' %}page{% endif %}">About</a>
+                        <a href="{{ url_for('show_page', page='skills_tools') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" aria-current="{% if request.endpoint == 'show_page' and request.view_args.page == 'skills_tools' %}page{% endif %}">Skills & Tools</a>
+                        <a href="{{ url_for('show_page', page='blog_insights') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" aria-current="{% if request.endpoint == 'show_page' and request.view_args.page == 'blog_insights' %}page{% endif %}">Blog</a>
+                        <a href="{{ url_for('show_page', page='contact_collaboration') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" aria-current="{% if request.endpoint == 'show_page' and request.view_args.page == 'contact_collaboration' %}page{% endif %}">Contact</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button type="button" id="mobile-menu-button" class="text-text-secondary hover:text-primary focus:outline-none focus:text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md p-1" onclick="toggleMobileMenu()" aria-controls="mobile-menu" aria-expanded="false" aria-label="Toggle mobile menu">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div id="mobile-menu" class="md:hidden hidden" role="menu">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-surface-200">
+                    <a href="{{ url_for('show_page', page='homepage') }}" class="btn-primary text-sm block" role="menuitem">Home</a>
+                    <a href="{{ url_for('show_page', page='case_studies') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm block focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" role="menuitem">Case Studies</a>
+                    <a href="{{ url_for('show_page', page='about') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm block focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" role="menuitem">About</a>
+                    <a href="{{ url_for('show_page', page='skills_tools') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm block focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" role="menuitem">Skills & Tools</a>
+                    <a href="{{ url_for('show_page', page='blog_insights') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm block focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" role="menuitem">Blog</a>
+                    <a href="{{ url_for('show_page', page='contact_collaboration') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm block focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" role="menuitem">Contact</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content" role="main">
+        <section class="py-20 bg-white">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h1 class="text-4xl font-bold text-primary mb-4">Error {{ error_code }}</h1>
+                <p class="text-lg text-text-secondary mb-6">{{ error_message | default('An unexpected error occurred. Please try again later.') }}</p>
+                <a href="{{ url_for('show_page', page='homepage') }}" class="inline-flex items-center text-primary font-semibold hover:text-primary-700 transition-smooth focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    Back to Home
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-primary-900 text-white py-16" role="contentinfo">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div class="md:col-span-2">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <svg class="w-8 h-8 text-secondary" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+                            <path d="M16 2L3 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-13-5z"/>
+                            <path d="M12 14l2 2 6-6" stroke="white" stroke-width="2" fill="none"/>
+                        </svg>
+                        <span class="text-2xl font-bold">DataCraft Portfolio</span>
+                    </div>
+                    <p class="text-primary-200 mb-6 max-w-md">
+                        Transforming complex data into strategic advantage through analytical rigor and compelling storytelling.
+                    </p>
+                    <div class="flex space-x-4" role="list" aria-label="Social media links">
+                        <a href="https://www.linkedin.com/in/timothee-nkwar-728377222/" target="_blank" rel="noopener noreferrer" class="text-primary-200 hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-md p-1" aria-label="LinkedIn profile" role="listitem">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </a>
+                        <a href="https://github.com/TimotheeNkwar?tab=repositories" target="_blank" rel="noopener noreferrer" class="text-primary-200 hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-md p-1" aria-label="GitHub repositories" role="listitem">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2" role="list">
+                        <li><a href="{{ url_for('show_page', page='case_studies') }}" class="text-primary-200 hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-sm">Case Studies</a></li>
+                        <li><a href="{{ url_for('show_page', page='about') }}" class="text-primary-200 hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-sm">About Me</a></li>
+                        <li><a href="{{ url_for('show_page', page='skills_tools') }}" class="text-primary-200 hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-sm">Skills & Tools</a></li>
+                        <li><a href="{{ url_for('show_page', page='blog_insights') }}" class="text-primary-200 hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-sm">Blog & Insights</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Get in Touch</h3>
+                    <ul class="space-y-2" role="list">
+                        <li class="text-primary-200">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                            <a href="mailto:timotheenkwar16@gmail.com" class="hover:text-white transition-smooth focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-900 rounded-sm">timotheenkwar16@gmail.com</a>
+                        </li>
+                        <li class="text-primary-200">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            Nicosia, Cyprus
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-primary-800 mt-12 pt-8 text-center text-primary-200">
+                <p>&copy; 2025 Timothee Nkwar. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const button = document.getElementById('mobile-menu-button');
+            const isExpanded = button.getAttribute('aria-expanded') === 'true';
+
+            menu.classList.toggle('hidden');
+            button.setAttribute('aria-expanded', !isExpanded);
+
+            if (!isExpanded) {
+                const firstMenuItem = menu.querySelector('a');
+                if (firstMenuItem) firstMenuItem.focus();
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('mobile-menu');
+            const button = document.getElementById('mobile-menu-button');
+            if (!menu.contains(event.target) && !button.contains(event.target) && !menu.classList.contains('hidden')) {
+                toggleMobileMenu();
+            }
+        });
+    </script>
+</body>
+</html>

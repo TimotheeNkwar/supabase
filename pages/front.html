@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome - DataCraft Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Animation pour le message d'introduction */
+        @keyframes slideInFade {
+            0% { opacity: 0; transform: translateY(40px) scale(0.95); }
+            20% { opacity: 1; transform: translateY(0) scale(1); }
+            80% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(0.95); }
+        }
+        .intro-message {
+            animation: slideInFade 10s ease-in-out forwards;
+        }
+        /* Animation pour les lettres du titre */
+        @keyframes letterPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .letter {
+            display: inline-block;
+            animation: letterPop 0.3s ease-in-out forwards;
+        }
+        /* Animation de pulsation pour le bouton */
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 12px rgba(59, 130, 246, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        .pulse {
+            animation: pulse 2s infinite ease-in-out;
+        }
+        /* Animation pour le contenu principal */
+        .main-content {
+            transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+        }
+        .main-content.hidden {
+            opacity: 0;
+            transform: translateY(30px) scale(0.98);
+        }
+        /* Fond noir avec particules lumineuses */
+        body {
+            background: #000000;
+            overflow: hidden;
+        }
+        /* Effet de particules en arrière-plan */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .particle {
+            position: absolute;
+            background: rgba(147, 197, 253, 0.4);
+            border-radius: 50%;
+            animation: float 12s infinite ease-in-out;
+        }
+        @keyframes float {
+            0% { transform: translateY(0) scale(1); opacity: 0.6; }
+            50% { transform: translateY(-100vh) scale(1.4); opacity: 0.3; }
+            100% { transform: translateY(-200vh) scale(1); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen relative">
+    <!-- Particules en arrière-plan -->
+    <div class="particles">
+        <div class="particle" style="width: 10px; height: 10px; left: 15%; animation-delay: 0s;"></div>
+        <div class="particle" style="width: 14px; height: 14px; left: 35%; animation-delay: 2s;"></div>
+        <div class="particle" style="width: 8px; height: 8px; left: 55%; animation-delay: 4s;"></div>
+        <div class="particle" style="width: 12px; height: 12px; left: 75%; animation-delay: 1s;"></div>
+        <div class="particle" style="width: 9px; height: 9px; left: 90%; animation-delay: 3s;"></div>
+    </div>
+
+    <!-- Message d'introduction -->
+    <div id="intro" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+        <div class="intro-message text-center text-white px-6">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-6 tracking-tight">
+                <span class="letter" style="animation-delay: 0.1s;">W</span>
+                <span class="letter" style="animation-delay: 0.2s;">e</span>
+                <span class="letter" style="animation-delay: 0.3s;">l</span>
+                <span class="letter" style="animation-delay: 0.4s;">c</span>
+                <span class="letter" style="animation-delay: 0.5s;">o</span>
+                <span class="letter" style="animation-delay: 0.6s;">m</span>
+                <span class="letter" style="animation-delay: 0.7s;">e</span>
+                <span class="letter" style="animation-delay: 0.8s;"> </span>
+                <span class="letter" style="animation-delay: 0.9s;">t</span>
+                <span class="letter" style="animation-delay: 1.0s;">o</span>
+                <span class="letter" style="animation-delay: 1.1s;"> </span>
+                <span class="letter" style="animation-delay: 1.2s;">D</span>
+                <span class="letter" style="animation-delay: 1.3s;">a</span>
+                <span class="letter" style="animation-delay: 1.4s;">t</span>
+                <span class="letter" style="animation-delay: 1.5s;">a</span>
+                <span class="letter" style="animation-delay: 1.6s;">C</span>
+                <span class="letter" style="animation-delay: 1.7s;">r</span>
+                <span class="letter" style="animation-delay: 1.8s;">a</span>
+                <span class="letter" style="animation-delay: 1.9s;">f</span>
+                <span class="letter" style="animation-delay: 2.0s;">t</span>
+            </h1>
+            <p class="text-lg md:text-xl max-w-md mx-auto font-light text-gray-300">
+                All data used on this site is fictional and intended for demonstration purposes only.
+            </p>
+        </div>
+    </div>
+
+    <!-- Contenu principal -->
+    <div id="main-content" class="hidden bg-gray-900 rounded-3xl shadow-2xl p-12 max-w-lg w-full mx-4 main-content border border-gray-800">
+        <div class="text-center">
+            <h1 class="text-4xl font-extrabold text-white mb-4 tracking-tight">DataCraft Portfolio</h1>
+            <p class="text-gray-400 mb-8 text-lg font-light leading-relaxed">
+                Discover cutting-edge tools and insights for data-driven decision making.
+            </p>
+            <a href="{{ url_for('show_page', page='homepage') }}" class="inline-block bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold py-4 px-10 rounded-full hover:from-blue-600 hover:to-indigo-600 transition duration-300 pulse shadow-lg">
+                Start Exploring
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Afficher le contenu principal après 5 secondes
+        setTimeout(() => {
+            const intro = document.getElementById('intro');
+            const mainContent = document.getElementById('main-content');
+            intro.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+        }, 10000);
+    </script>
+</body>
+</html>

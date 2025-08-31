@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Case Studies - DataCraft Portfolio</title>
+    <meta name="description" content="Explore detailed case studies showcasing data science projects with measurable business impact across healthcare, finance, retail, and more industries." />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+    <link rel="icon" href="{{ url_for('static', filename='images/icon.png') }}"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script type="module" src="{{ url_for('static', filename='js/dhws-data-injector.js') }}"></script>
+<script type="module" src="https://static.rocket.new/rocket-web.js?_cfg=https%3A%2F%2Fdatacraft2733back.builtwithrocket.new&_be=https%3A%2F%2Fapplication.rocket.new&_v=0.1.6"></script>
+</head>
+<!-- Ajoute ce script juste avant </body> -->
+<script>
+    // NAVIGATION ACTIVE BACKGROUND LOGIC (clic utilisateur)
+    function setActiveNavOnClick() {
+        // Sélectionne tous les liens de navigation (desktop + mobile)
+        const navLinks = document.querySelectorAll(
+            'nav a, #mobile-menu a'
+        );
+        navLinks.forEach(link => {
+            link.addEventListener('click', function (e) {
+                // Pour les liens internes uniquement (pas target="_blank")
+                if (
+                    this.target === "_blank" ||
+                    this.href.startsWith('mailto:') ||
+                    this.href.startsWith('tel:')
+                ) return;
+
+                // Retire le fond noir de tous les liens
+                navLinks.forEach(l => l.classList.remove('bg-primary-900', 'text-white', 'font-bold', 'shadow-lg'));
+                // Applique le fond noir sur le lien cliqué
+                this.classList.add('bg-primary-900', 'text-white', 'font-bold', 'shadow-lg');
+            });
+        });
+
+        // Applique aussi au chargement pour la page courante
+        const currentPath = window.location.pathname.replace(/\/+$/, '');
+        navLinks.forEach(link => {
+            let linkPath = link.getAttribute('href');
+            if (linkPath) {
+                linkPath = linkPath.replace(/^https?:\/\/[^/]+/, '');
+                linkPath = linkPath.split(/[?#]/)[0];
+                linkPath = linkPath.replace(/\/+$/, '');
+            }
+            if (linkPath === currentPath) {
+                link.classList.add('bg-primary-900', 'text-white', 'font-bold', 'shadow-lg');
+            } else {
+                link.classList.remove('bg-primary-900', 'text-white', 'font-bold', 'shadow-lg');
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', setActiveNavOnClick);
+</script>
+<body class="bg-background text-text-primary">
+    <!-- Navigation Header -->
+    <header class="bg-white shadow-subtle sticky top-0 z-50">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex-shrink-0">
+                    <a href="{{ url_for('show_page', page='homepage') }}" class="flex items-center space-x-2">
+                        <svg class="w-8 h-8 text-primary" viewBox="0 0 32 32" fill="currentColor">
+                            <path d="M16 2L3 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-13-5z"/>
+                            <path d="M12 14l2 2 6-6" stroke="white" stroke-width="2" fill="none"/>
+                        </svg>
+                        <span class="text-xl font-bold text-primary">Timothee Nkwar</span>
+                    </a>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="{{ url_for('show_page', page='homepage') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Home</a>
+                        <a href="{{ url_for('show_page', page='case_studies') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Case Studies</a>
+                        <a href="{{ url_for('show_page', page='about') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">About</a>
+                        <a href="{{ url_for('show_page', page='skills_tools') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Skills & Tools</a>
+                        <a href="{{ url_for('show_page', page='blog_insights') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Blog</a>
+                        <a href="{{ url_for('show_page', page='contact_collaboration') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Contact</a>
+                    </div>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button type="button" class="text-text-secondary hover:text-primary focus:outline-none focus:text-primary" onclick="toggleMobileMenu()">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Navigation -->
+            <div id="mobile-menu" class="md:hidden hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-surface-200">
+                    <a href="{{ url_for('show_page', page='homepage') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Home</a>
+                    <a href="{{ url_for('show_page', page='case_studies') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Case Studies</a>
+                    <a href="{{ url_for('show_page', page='about') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">About</a>
+                    <a href="{{ url_for('show_page', page='skills_tools') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Skills & Tools</a>
+                    <a href="{{ url_for('show_page', page='blog_insights') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Blog</a>
+                    <a href="{{ url_for('show_page', page='contact_collaboration') }}" class="text-text-secondary hover:text-primary transition-smooth px-3 py-2 rounded-md text-sm">Contact</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="hero" class="relative bg-gradient-to-br from-primary-50 to-secondary-50 py-16 lg:py-24">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 opacity-10">
+            <svg class="w-full h-full" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                        <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" stroke-width="0.5"/>
+                    </pattern>
+                </defs>
+                <rect width="100" height="100" fill="url(#grid)" class="text-primary"/>
+            </svg>
+        </div>
+
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-primary mb-6 leading-tight">
+                    Case Studies &
+                    <span class="text-gradient">Project Portfolio</span>
+                </h1>
+                <p class="text-xl text-text-secondary mb-8 max-w-3xl mx-auto">
+                    Explore detailed case studies showcasing how data science transforms business challenges into strategic advantages. Each project demonstrates the complete journey from problem identification to measurable impact.
+                </p>
+
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+                    <div class="bg-white rounded-xl p-4 shadow-subtle">
+                        <div class="text-2xl font-bold text-primary">10+</div>
+                        <div class="text-sm text-text-secondary">Projects Completed</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 shadow-subtle">
+                        <div class="text-2xl font-bold text-secondary">5+</div>
+                        <div class="text-sm text-text-secondary">Business Impact</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 shadow-subtle">
+                        <div class="text-2xl font-bold text-accent">8</div>
+                        <div class="text-sm text-text-secondary">Industries</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-4 shadow-subtle">
+                        <div class="text-2xl font-bold text-success">98%</div>
+                        <div class="text-sm text-text-secondary">Success Rate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Filter and Search Section -->
+    <section id="filters" class="py-12 bg-white border-b border-surface-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Search Bar -->
+            <div class="mb-8">
+                <div class="relative max-w-2xl mx-auto">
+                    <input type="text" id="search-input" placeholder="Search case studies by keyword, industry, or technique..." class="input-field pl-12 pr-4 py-4 text-lg" />
+                    <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <button onclick="filterProjects('all')" class="filter-btn active px-6 py-3 rounded-lg font-medium transition-smooth bg-primary text-white">
+                    All Projects
+                </button>
+                <button onclick="filterProjects('healthcare')" class="filter-btn px-6 py-3 rounded-lg font-medium transition-smooth bg-surface-100 text-text-secondary hover:bg-surface-200">
+                    Healthcare
+                </button>
+                <button onclick="filterProjects('finance')" class="filter-btn px-6 py-3 rounded-lg font-medium transition-smooth bg-surface-100 text-text-secondary hover:bg-surface-200">
+                    Finance
+                </button>
+                <button onclick="filterProjects('ecommerce')" class="filter-btn px-6 py-3 rounded-lg font-medium transition-smooth bg-surface-100 text-text-secondary hover:bg-surface-200">
+                    E-commerce
+                </button>
+                <button onclick="filterProjects('logistics')" class="filter-btn px-6 py-3 rounded-lg font-medium transition-smooth bg-surface-100 text-text-secondary hover:bg-surface-200">
+                    Logistics
+                </button>
+                <button onclick="filterProjects('retail')" class="filter-btn px-6 py-3 rounded-lg font-medium transition-smooth bg-surface-100 text-text-secondary hover:bg-surface-200">
+                    Retail
+                </button>
+            </div>
+
+            <!-- Advanced Filters -->
+            <div class="bg-surface-50 rounded-xl p-6">
+                <div class="grid md:grid-cols-2">
+                    <!-- Technique Filter -->
+                    <div>
+                        <label class="block text-sm font-semibold text-primary mb-3">Analytical Technique</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="technique-filter mr-3" value="machine-learning" onchange="applyFilters()" />
+                                <span class="text-sm text-text-secondary">Machine Learning</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="technique-filter mr-3" value="predictive-modeling" onchange="applyFilters()" />
+                                <span class="text-sm text-text-secondary">Predictive Modeling</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="technique-filter mr-3" value="nlp" onchange="applyFilters()" />
+                                <span class="text-sm text-text-secondary">Natural Language Processing</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="technique-filter mr-3" value="computer-vision" onchange="applyFilters()" />
+                                <span class="text-sm text-text-secondary">Computer Vision</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Impact Level Filter -->
+                    <!--<div>
+                        <label class="block text-sm font-semibold text-primary mb-3">Business Impact</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="impact-filter mr-3" value="high" onchange="applyFilters()" />
+                                <span class="text-sm text-text-secondary">High Impact ($1M+)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="impact-filter mr-3" value="medium" onchange="applyFilters()" />
+                                <span class="text-sm text-text-secondary">Medium Impact ($100K-$1M)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="impact-filter mr-3" value="strategic" onchange="applyFilters()" />
+                                <span class="text-sm text-text-secondary">Strategic Impact</span>
+                            </label>
+                        </div>
+                    </div>-->
+
+                    <!-- Tools Filter -->
+                    <div>
+                        <label class="block text-sm font-semibold text-primary mb-3">Tools & Technologies</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="tools-filter mr-3" value="python" onchange="applyFilters()" />
+                                <span class="text-sm text-text-secondary">Python</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="tools-filter mr-3" value="r" onchange="applyFilters()" />
+                                <span class="text-sm text-text-secondary">R</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="tools-filter mr-3" value="sql" onchange="applyFilters()" />
+                                <span class="text-sm text-text-secondary">SQL</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="tools-filter mr-3" value="tableau" onchange="applyFilters()" />
+                                <span class="text-sm text-text-secondary">Tableau</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clear Filters -->
+                <div class="mt-6 text-center">
+                    <button onclick="clearAllFilters()" class="text-secondary hover:text-secondary-700 font-medium transition-smooth">
+                        <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Clear All Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Case Studies Grid -->
+    <section id="case-studies-grid" class="py-20 bg-surface-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Results Counter -->
+            <div class="mb-8">
+                <p class="text-text-secondary">
+                    Showing <span id="results-count" class="font-semibold text-primary">9</span> case studies
+                </p>
+            </div>
+
+            <!-- Case Studies Grid -->
+            <div id="projects-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Case Study 1: E-commerce Customer Lifetime Value -->
+                <noncscript><div class="case-study-card bg-white rounded-2xl shadow-subtle hover:shadow-interactive transition-smooth overflow-hidden" data-industry="ecommerce" data-technique="machine-learning predictive-modeling" data-impact="high" data-tools="python sql">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3" alt="E-commerce Analytics Dashboard" class="w-full h-48 object-cover" loading="lazy" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;" />
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-accent text-white px-3 py-1 rounded-full text-sm font-medium">E-commerce</span>
+                        </div>
+                        <!--<div class="absolute top-4 right-4">
+                            <span class="bg-success text-white px-3 py-1 rounded-full text-sm font-medium">$2.1M Impact</span>
+                        </div>-->
+                    </div>
+
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-primary mb-3">Customer Lifetime Value Optimization</h3>
+                        <p class="text-text-secondary mb-4">
+                            Developed predictive models that increased customer retention by 34% and boosted average order value by $127 for a major e-commerce platform.
+                        </p>
+
+                        <!-- Key Metrics -->
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-success">+34%</div>
+                                <div class="text-xs text-text-secondary">Retention Rate</div>
+                            </div>
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-primary">$127</div>
+                                <div class="text-xs text-text-secondary">AOV Increase</div>
+                            </div>
+                        </div>
+
+                        <!-- Mini Visualization -->
+                        <div class="bg-surface-50 rounded-lg p-3 mb-4">
+                            <svg class="w-full h-16" viewBox="0 0 200 60">
+                                <polyline points="10,50 50,35 90,25 130,20 170,15 190,10" fill="none" stroke="#38b2ac" stroke-width="2"/>
+                                <circle cx="190" cy="10" r="3" fill="#38b2ac"/>
+                            </svg>
+                        </div>
+
+                        <!-- Technologies Used -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-primary-100 text-primary text-xs rounded-full">Python</span>
+                            <span class="px-2 py-1 bg-secondary-100 text-secondary text-xs rounded-full">Scikit-learn</span>
+                            <span class="px-2 py-1 bg-accent-100 text-accent text-xs rounded-full">SQL</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-text-secondary">
+                                <span class="font-medium">Timeline:</span> 3 months
+                            </div>
+                            <button onclick="openCaseStudy('clv-optimization')" class="text-primary font-semibold hover:text-primary-700 transition-smooth">
+                                View Details →
+                            </button>
+                        </div>
+                    </div>
+                </div></noncscript>
+
+                <!-- Case Study 2: Healthcare Patient Readmission -->
+                <div class="case-study-card bg-white rounded-2xl shadow-subtle hover:shadow-interactive transition-smooth overflow-hidden" data-industry="healthcare" data-technique="machine-learning predictive-modeling" data-impact="high" data-tools="python r">
+                    <div class="relative">
+                        <img src="https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="Healthcare Data Analysis" class="w-full h-48 object-cover" loading="lazy" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;" />
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-success text-white px-3 py-1 rounded-full text-sm font-medium">Healthcare</span>
+                        </div>
+                        <!--<div class="absolute top-4 right-4">
+                            <span class="bg-success text-white px-3 py-1 rounded-full text-sm font-medium">$3.2M Savings</span>
+                        </div>-->
+                    </div>
+
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-primary mb-3">Patient Readmission Prediction</h3>
+                        <p class="text-text-secondary mb-4">
+                            Built ML models reducing hospital readmissions by 28% while improving patient care quality and operational efficiency for a regional health system.
+                        </p>
+
+                        <!-- Key Metrics -->
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-success">-28%</div>
+                                <div class="text-xs text-text-secondary">Readmissions</div>
+                            </div>
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-primary">92%</div>
+                                <div class="text-xs text-text-secondary">Accuracy</div>
+                            </div>
+                        </div>
+
+                        <!-- Mini Visualization -->
+                        <div class="bg-surface-50 rounded-lg p-3 mb-4">
+                            <svg class="w-full h-16" viewBox="0 0 200 60">
+                                <rect x="20" y="40" width="15" height="15" fill="#38a169"/>
+                                <rect x="50" y="30" width="15" height="25" fill="#38a169"/>
+                                <rect x="80" y="20" width="15" height="35" fill="#38a169"/>
+                                <rect x="110" y="35" width="15" height="20" fill="#38a169"/>
+                                <rect x="140" y="25" width="15" height="30" fill="#38a169"/>
+                            </svg>
+                        </div>
+
+                        <!-- Technologies Used -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-primary-100 text-primary text-xs rounded-full">Python</span>
+                            <span class="px-2 py-1 bg-secondary-100 text-secondary text-xs rounded-full">R</span>
+                            <span class="px-2 py-1 bg-success-100 text-success text-xs rounded-full">TensorFlow</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-text-secondary">
+                                <span class="font-medium">Timeline:</span> 6 months
+                            </div>
+                            <button onclick="openCaseStudy('patient-readmission')" class="text-primary font-semibold hover:text-primary-700 transition-smooth">
+                                View Details →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Case Study 3:>House Price Prediction -->
+                <div class="case-study-card bg-white rounded-2xl shadow-subtle hover:shadow-interactive transition-smooth overflow-hidden" data-industry="finance" data-technique="machine-learning predictive-modeling" data-impact="high" data-tools="python sql tableau">
+                    <div class="relative">
+                        <img src="https://blog.companywatch.net/hs-fs/hubfs/AdobeStock_245829720.jpeg?width=720&height=381&name=AdobeStock_245829720.jpeg" alt="Financial Risk Analysis" class="w-full h-48 object-cover" loading="lazy" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;" />
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-warning text-white px-3 py-1 rounded-full text-sm font-medium">Retail</span>
+                        </div>
+                        <!--<div class="absolute top-4 right-4">
+                            <span class="bg-success text-white px-3 py-1 rounded-full text-sm font-medium">23% Returns</span>
+                        </div>-->
+                    </div>
+
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-primary mb-3">House Price Prediction</h3>
+                        <p class="text-text-secondary mb-4">
+                            Developed a regression model to accurately predict house prices, performed feature engineering to improve model performance,
+                            and validated results using cross-validation techniques..
+                        </p>
+
+                        <!-- Key Metrics -->
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-success">23%</div>
+                                <div class="text-xs text-text-secondary">Annual Returns</div>
+                            </div>
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-primary">1.8</div>
+                                <div class="text-xs text-text-secondary">Sharpe Ratio</div>
+                            </div>
+                        </div>
+
+                        <!-- Mini Visualization -->
+                        <div class="bg-surface-50 rounded-lg p-3 mb-4">
+                            <svg class="w-full h-16" viewBox="0 0 200 60">
+                                <path d="M10,45 Q50,30 90,35 T170,20" fill="none" stroke="#d69e2e" stroke-width="2"/>
+                                <circle cx="170" cy="20" r="3" fill="#d69e2e"/>
+                            </svg>
+                        </div>
+
+                        <!-- Technologies Used -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-primary-100 text-primary text-xs rounded-full">Python</span>
+                            <span class="px-2 py-1 bg-warning-100 text-warning text-xs rounded-full">NumPy</span>
+                            <span class="px-2 py-1 bg-accent-100 text-accent text-xs rounded-full">SQL</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-text-secondary">
+                                <span class="font-medium">Timeline:</span> 4 months
+                            </div>
+                            <button onclick="openCaseStudy('House-Price-Prediction')" class="text-primary font-semibold hover:text-primary-700 transition-smooth">
+                                View Details →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Case Study 4: Supply Chain Optimization -->
+                <div class="case-study-card bg-white rounded-2xl shadow-subtle hover:shadow-interactive transition-smooth overflow-hidden" data-industry="logistics" data-technique="machine-learning predictive-modeling" data-impact="high" data-tools="python sql tableau">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426&auto=format&fit=crop&ixlib=rb-4.0.3" alt="Supply Chain Optimization" class="w-full h-48 object-cover" loading="lazy" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;" />
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-secondary text-white px-3 py-1 rounded-full text-sm font-medium">Logistics</span>
+                        </div>
+                        <!--<div class="absolute top-4 right-4">
+                            <span class="bg-success text-white px-3 py-1 rounded-full text-sm font-medium">$1.8M Savings</span>
+                        </div>-->
+                    </div>
+
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-primary mb-3">Supply Chain Optimization</h3>
+                        <p class="text-text-secondary mb-4">
+                            Implemented predictive analytics reducing inventory costs by 31% while improving delivery times by 18% for a global manufacturer.
+                        </p>
+
+                        <!-- Key Metrics -->
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-success">-31%</div>
+                                <div class="text-xs text-text-secondary">Inventory Costs</div>
+                            </div>
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-primary">+18%</div>
+                                <div class="text-xs text-text-secondary">Delivery Speed</div>
+                            </div>
+                        </div>
+
+                        <!-- Mini Visualization -->
+                        <div class="bg-surface-50 rounded-lg p-3 mb-4">
+                            <svg class="w-full h-16" viewBox="0 0 200 60">
+                                <polygon points="20,50 40,20 60,35 80,15 100,40 120,25 140,45 160,30 180,50" fill="none" stroke="#38b2ac" stroke-width="2"/>
+                            </svg>
+                        </div>
+
+                        <!-- Technologies Used -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-primary-100 text-primary text-xs rounded-full">Python</span>
+                            <span class="px-2 py-1 bg-secondary-100 text-secondary text-xs rounded-full">Tableau</span>
+                            <span class="px-2 py-1 bg-accent-100 text-accent text-xs rounded-full">SQL</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-text-secondary">
+                                <span class="font-medium">Timeline:</span> 5 months
+                            </div>
+                            <button onclick="openCaseStudy('supply-chain')" class="text-primary font-semibold hover:text-primary-700 transition-smooth">
+                                View Details →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Case Study 5: Retail Demand Forecasting -->
+                <div class="case-study-card bg-white rounded-2xl shadow-subtle hover:shadow-interactive transition-smooth overflow-hidden" data-industry="retail" data-technique="machine-learning predictive-modeling" data-impact="medium" data-tools="python r sql">
+                    <div class="relative">
+                        <img src="https://images.pexels.com/photos/264636/pexels-photo-264636.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="Retail Analytics Dashboard" class="w-full h-48 object-cover" loading="lazy" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;" />
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-primary text-white px-3 py-1 rounded-full text-sm font-medium">Retail</span>
+                        </div>
+                        <!--<div class="absolute top-4 right-4">
+                            <span class="bg-success text-white px-3 py-1 rounded-full text-sm font-medium">$850K Impact</span>
+                        </div>-->
+                    </div>
+
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-primary mb-3">Demand Forecasting System</h3>
+                        <p class="text-text-secondary mb-4">
+                            Built advanced forecasting models improving inventory accuracy by 42% and reducing stockouts by 35% for a retail chain.
+                        </p>
+
+                        <!-- Key Metrics -->
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-success">+42%</div>
+                                <div class="text-xs text-text-secondary">Forecast Accuracy</div>
+                            </div>
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-primary">-35%</div>
+                                <div class="text-xs text-text-secondary">Stockouts</div>
+                            </div>
+                        </div>
+
+                        <!-- Mini Visualization -->
+                        <div class="bg-surface-50 rounded-lg p-3 mb-4">
+                            <svg class="w-full h-16" viewBox="0 0 200 60">
+                                <path d="M10,50 L30,45 L50,40 L70,35 L90,30 L110,25 L130,30 L150,35 L170,40 L190,45" fill="none" stroke="#1a365d" stroke-width="2"/>
+                            </svg>
+                        </div>
+
+                        <!-- Technologies Used -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-primary-100 text-primary text-xs rounded-full">Python</span>
+                            <span class="px-2 py-1 bg-secondary-100 text-secondary text-xs rounded-full">R</span>
+                            <span class="px-2 py-1 bg-accent-100 text-accent text-xs rounded-full">SQL</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-text-secondary">
+                                <span class="font-medium">Timeline:</span> 4 months
+                            </div>
+                            <button onclick="openCaseStudy('demand-forecasting')" class="text-primary font-semibold hover:text-primary-700 transition-smooth">
+                                View Details →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Case Study 6: NLP Sentiment Analysis -->
+                <div class="case-study-card bg-white rounded-2xl shadow-subtle hover:shadow-interactive transition-smooth overflow-hidden" data-industry="retail" data-technique="nlp machine-learning" data-impact="strategic" data-tools="python">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3" alt="Social Media Analytics" class="w-full h-48 object-cover" loading="lazy" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;" />
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-accent text-white px-3 py-1 rounded-full text-sm font-medium">Social Media</span>
+                        </div>
+                        <!--<div class="absolute top-4 right-4">
+                            <span class="bg-secondary text-white px-3 py-1 rounded-full text-sm font-medium">Strategic</span>
+                        </div>-->
+                    </div>
+
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-primary mb-3">Social Media Sentiment Analysis</h3>
+                        <p class="text-text-secondary mb-4">
+                            Developed NLP models analyzing 2M+ social mentions to provide real-time brand sentiment insights and crisis detection.
+                        </p>
+
+                        <!-- Key Metrics -->
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-success">2M+</div>
+                                <div class="text-xs text-text-secondary">Mentions Analyzed</div>
+                            </div>
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-primary">89%</div>
+                                <div class="text-xs text-text-secondary">Accuracy</div>
+                            </div>
+                        </div>
+
+                        <!-- Mini Visualization -->
+                        <div class="bg-surface-50 rounded-lg p-3 mb-4">
+                            <svg class="w-full h-16" viewBox="0 0 200 60">
+                                <circle cx="50" cy="30" r="8" fill="#38a169" opacity="0.7"/>
+                                <circle cx="100" cy="25" r="12" fill="#38b2ac" opacity="0.7"/>
+                                <circle cx="150" cy="35" r="6" fill="#ed8936" opacity="0.7"/>
+                            </svg>
+                        </div>
+
+                        <!-- Technologies Used -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-primary-100 text-primary text-xs rounded-full">Python</span>
+                            <span class="px-2 py-1 bg-secondary-100 text-secondary text-xs rounded-full">NLTK</span>
+                            <span class="px-2 py-1 bg-accent-100 text-accent text-xs rounded-full">spaCy</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-text-secondary">
+                                <span class="font-medium">Timeline:</span> 3 months
+                            </div>
+                            <button onclick="openCaseStudy('sentiment-analysis')" class="text-primary font-semibold hover:text-primary-700 transition-smooth">
+                                View Details →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Case Study 7: Fraud Detection System -->
+                <div class="case-study-card bg-white rounded-2xl shadow-subtle hover:shadow-interactive transition-smooth overflow-hidden" data-industry="finance" data-technique="machine-learning predictive-modeling" data-impact="high" data-tools="python sql">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3" alt="Fraud Detection Dashboard" class="w-full h-48 object-cover" loading="lazy" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;" />
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-warning text-white px-3 py-1 rounded-full text-sm font-medium">Finance</span>
+                        </div>
+                        <!--<div class="absolute top-4 right-4">
+                            <span class="bg-success text-white px-3 py-1 rounded-full text-sm font-medium">$5M Savings</span>
+                        </div>-->
+                    </div>
+
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-primary mb-3">Fraud Detection System</h3>
+                        <p class="text-text-secondary mb-4">
+                            Implemented a machine learning system that reduced fraudulent transactions, saving millions for a financial institution..
+                        </p>
+
+                        <!-- Key Metrics -->
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-success">-40%</div>
+                                <div class="text-xs text-text-secondary">Fraud Rate</div>
+                            </div>
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-primary">95%</div>
+                                <div class="text-xs text-text-secondary">Detection Accuracy</div>
+                            </div>
+                        </div>
+
+                        <!-- Mini Visualization -->
+                        <div class="bg-surface-50 rounded-lg p-3 mb-4">
+                            <svg class="w-full h-16" viewBox="0 0 200 60">
+                                <path d="M10,50 L50,30 L90,40 L130,20 L170,35 L190,15" fill="none" stroke="#d69e2e" stroke-width="2"/>
+                                <circle cx="190" cy="15" r="3" fill="#d69e2e"/>
+                            </svg>
+                        </div>
+
+                        <!-- Technologies Used -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-primary-100 text-primary text-xs rounded-full">Python</span>
+                            <span class="px-2 py-1 bg-warning-100 text-warning text-xs rounded-full">Scikit-learn</span>
+                            <span class="px-2 py-1 bg-accent-100 text-accent text-xs rounded-full">SQL</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-text-secondary">
+                                <span class="font-medium">Timeline:</span> 5 months
+                            </div>
+                            <button onclick="openCaseStudy('fraud-detection')" class="text-primary font-semibold hover:text-primary-700 transition-smooth">
+                                View Details →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Case Study 8: Personalized Marketing Campaign -->
+                <nonscript><div class="case-study-card bg-white rounded-2xl shadow-subtle hover:shadow-interactive transition-smooth overflow-hidden" data-industry="ecommerce" data-technique="nlp machine-learning" data-impact="high" data-tools="python">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3" alt="Marketing Campaign Dashboard" class="w-full h-48 object-cover" loading="lazy" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;" />
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-accent text-white px-3 py-1 rounded-full text-sm font-medium">E-commerce</span>
+                        </div>
+                        <!--<div class="absolute top-4 right-4">
+                            <span class="bg-success text-white px-3 py-1 rounded-full text-sm font-medium">$1.5M Revenue</span>
+                        </div>-->
+                    </div>
+
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-primary mb-3">Online Sales Data Analysis</h3>
+                        <p class="text-text-secondary mb-4">
+                            Performed EDA on online sales data to identify customer behavior and sales trends, uncovered key drivers of revenue growth,
+                            and visualized insights using Python libraries like Matplotlib and Seaborn.**
+                        </p>
+
+                        <!-- Key Metrics -->
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-success">+25%</div>
+                                <div class="text-xs text-text-secondary">Conversion Rate</div>
+                            </div>
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-primary">$1.5M</div>
+                                <div class="text-xs text-text-secondary">Additional Revenue</div>
+                            </div>
+                        </div>
+
+                        <!-- Mini Visualization -->
+                        <div class="bg-surface-50 rounded-lg p-3 mb-4">
+                            <svg class="w-full h-16" viewBox="0 0 200 60">
+                                <polyline points="10,50 50,40 90,30 130,20 170,30 190,40" fill="none" stroke="#38b2ac" stroke-width="2"/>
+                                <circle cx="190" cy="40" r="3" fill="#38b2ac"/>
+                            </svg>
+                        </div>
+
+                        <!-- Technologies Used -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-primary-100 text-primary text-xs rounded-full">Python</span>
+                            <span class="px-2 py-1 bg-secondary-100 text-secondary text-xs rounded-full">NLTK</span>
+                            <span class="px-2 py-1 bg-accent-100 text-accent text-xs rounded-full">TensorFlow</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-text-secondary">
+                                <span class="font-medium">Timeline:</span> 4 months
+                            </div>
+                            <button onclick="openCaseStudy('online-sales')" class="text-primary font-semibold hover:text-primary-700 transition-smooth">
+                                View Details →
+                            </button>
+                        </div>
+                    </div>
+                </div></nonscript>
+
+                <!-- Case Study 9: Predictive Maintenance for Manufacturing -->
+                <nonscript><div class="case-study-card bg-white rounded-2xl shadow-subtle hover:shadow-interactive transition-smooth overflow-hidden" data-industry="logistics" data-technique="machine-learning predictive-modeling" data-impact="high" data-tools="python sql">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1504639725590-34d0984388bd?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3" alt="Predictive Maintenance Dashboard" class="w-full h-48 object-cover" loading="lazy" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;" />
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-secondary text-white px-3 py-1 rounded-full text-sm font-medium">Logistics</span>
+                        </div>
+                        <!--<div class="absolute top-4 right-4">
+                            <span class="bg-success text-white px-3 py-1 rounded-full text-sm font-medium">$2M Savings</span>
+                        </div>-->
+                    </div>
+
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-primary mb-3">Predictive Maintenance for Manufacturing</h3>
+                        <p class="text-text-secondary mb-4">
+                            Deployed a predictive maintenance system that reduced equipment downtime by 30% and saved $2M for a manufacturing plant.
+                        </p>
+
+                        <!-- Key Metrics -->
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-success">-30%</div>
+                                <div class="text-xs text-text-secondary">Downtime</div>
+                            </div>
+                            <div class="bg-surface-50 rounded-lg p-3 text-center">
+                                <div class="text-lg font-bold text-primary">$2M</div>
+                                <div class="text-xs text-text-secondary">Cost Savings</div>
+                            </div>
+                        </div>
+
+                        <!-- Mini Visualization -->
+                        <div class="bg-surface-50 rounded-lg p-3 mb-4">
+                            <svg class="w-full h-16" viewBox="0 0 200 60">
+                                <path d="M10,50 L50,40 L90,30 L130,20 L170,30 L190,40" fill="none" stroke="#38a169" stroke-width="2"/>
+                                <circle cx="190" cy="40" r="3" fill="#38a169"/>
+                            </svg>
+                        </div>
+
+                        <!-- Technologies Used -->
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-primary-100 text-primary text-xs rounded-full">Python</span>
+                            <span class="px-2 py-1 bg-secondary-100 text-secondary text-xs rounded-full">Scikit-learn</span>
+                            <span class="px-2 py-1 bg-accent-100 text-accent text-xs rounded-full">SQL</span>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-text-secondary">
+                                <span class="font-medium">Timeline:</span> 6 months
+                            </div>
+                            <button onclick="openCaseStudy('predictive-maintenance')" class="text-primary font-semibold hover:text-primary-700 transition-smooth">
+                                View Details →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div></nonscript>
+
+            <!-- Load More Button -->
+            <div class="text-center mt-12">
+                <button onclick="loadMoreProjects()" class="btn-secondary inline-flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Load More Projects
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Case Study Modal -->
+    <div id="case-study-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden" role="dialog" aria-labelledby="modal-title" aria-hidden="true">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl max-w-4xl w-full max-h-screen overflow-y-auto">
+                <div class="sticky top-0 bg-white border-b border-surface-200 p-6 flex justify-between items-center">
+                    <h2 id="modal-title" class="text-2xl font-bold text-primary">Case Study Details</h2>
+                    <button onclick="closeCaseStudy()" class="text-text-secondary hover:text-primary transition-smooth" aria-label="Close modal">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <div id="modal-content" class="p-6">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <section id="cta" class="py-20 bg-gradient-to-br from-primary to-primary-800">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">
+                Ready to Create Your Next Success Story?
+            </h2>
+            <p class="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
+                Let's discuss how data-driven insights can solve your business challenges and drive measurable results.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="{{ url_for('show_page', page='contact_collaboration') }}" class="bg-white text-primary px-8 py-4 rounded-lg font-semibold hover:bg-surface-50 transition-smooth inline-flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                    Start a Project
+                </a>
+                <a href="{{ url_for('show_page', page='skills_tools') }}" class="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-primary transition-smooth inline-flex items-center justify-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    View My Skills
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-primary-900 text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <!-- Brand -->
+                <div class="md:col-span-2">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <svg class="w-8 h-8 text-secondary" viewBox="0 0 32 32" fill="currentColor">
+                            <path d="M16 2L3 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-13-5z"/>
+                            <path d="M12 14l2 2 6-6" stroke="white" stroke-width="2" fill="none"/>
+                        </svg>
+                        <span class="text-2xl font-bold">DataCraft Portfolio</span>
+                    </div>
+                    <p class="text-primary-200 mb-6 max-w-md">
+                        Transforming complex data into strategic advantage through analytical rigor and compelling storytelling.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="https://www.linkedin.com/in/timothee-nkwar-728377222/" target="_blank" class="text-primary-200 hover:text-white transition-smooth">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </a>
+                        <a href="https://github.com/TimotheeNkwar?tab=repositories" target="_blank" class="text-primary-200 hover:text-white transition-smooth">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="{{ url_for('show_page', page='case_studies') }}" class="text-primary-200 hover:text-white transition-smooth">Case Studies</a></li>
+                        <li><a href="{{ url_for('show_page', page='about') }}" class="text-primary-200 hover:text-white transition-smooth">About Me</a></li>
+                        <li><a href="{{ url_for('show_page', page='skills_tools') }}" class="text-primary-200 hover:text-white transition-smooth">Skills & Tools</a></li>
+                        <li><a href="{{ url_for('show_page', page='blog_insights') }}" class="text-primary-200 hover:text-white transition-smooth">Blog & Insights</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact Info -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Get in Touch</h3>
+                    <ul class="space-y-2">
+                        <li class="text-primary-200">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                            </svg>
+                            timotheenkwar16@gmail.com
+                        </li>
+                        <li class="text-primary-200">
+                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            Nicosia, Cyprus
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-primary-800 mt-12 pt-8 text-center text-primary-200">
+                <p>&copy; 2025 Timothee Nkwar. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+    // Mobile Menu Toggle
+    function toggleMobileMenu() {
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (mobileMenu) mobileMenu.classList.toggle('hidden');
+    }
+
+    // Filter Projects
+    function filterProjects(industry, event) {
+        const cards = document.querySelectorAll('.case-study-card');
+        const buttons = document.querySelectorAll('.filter-btn');
+
+        // Update button states
+        buttons.forEach(btn => {
+            btn.classList.remove('bg-primary', 'text-white', 'active');
+            btn.classList.add('bg-surface-100', 'text-text-secondary');
+            btn.innerHTML = `<svg class="w-4 h-4 mr-1 inline" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.475 2 2 6.475 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.014-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.091-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.03-2.682-.104-.253-.448-1.27.098-2.647 0 0 .84-.269 2.75 1.026A9.564 9.564 0 0112 7.844c.85.004 1.705.114 2.504.334 1.91-1.295 2.75-1.026 2.75-1.026.546 1.377.202 2.394.1 2.647.64.698 1.028 1.591 1.028 2.682 0 3.841-2.337 4.687-4.565 4.935.359.308.678.916.678 1.847 0 1.332-.012 2.406-.012 2.734 0 .267.18.577.688.479C19.138 20.161 22 16.418 22 12c0-5.525-4.475-10-10-10z"/></svg> ${btn.textContent.trim()}`;
+        });
+        if (event && event.target) {
+            event.target.classList.remove('bg-surface-100', 'text-text-secondary');
+            event.target.classList.add('bg-primary', 'text-white', 'active');
+        }
+
+        // Filter cards
+        let visibleCount = 0;
+        cards.forEach(card => {
+            if (industry === 'all' || card.dataset.industry === industry) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Update results count
+        document.getElementById('results-count').textContent = visibleCount;
+    }
+
+    // Apply Advanced Filters
+    function applyFilters() {
+        const cards = document.querySelectorAll('.case-study-card');
+        const techniqueFilters = Array.from(document.querySelectorAll('.technique-filter:checked')).map(cb => cb.value);
+        const impactFilters = Array.from(document.querySelectorAll('.impact-filter:checked')).map(cb => cb.value);
+        const toolsFilters = Array.from(document.querySelectorAll('.tools-filter:checked')).map(cb => cb.value);
+
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            let show = true;
+
+            // Check technique filters
+            if (techniqueFilters.length > 0) {
+                const cardTechniques = card.dataset.technique.split(' ');
+                show = show && techniqueFilters.some(filter => cardTechniques.includes(filter));
+            }
+
+            // Check impact filters
+            if (impactFilters.length > 0) {
+                show = show && impactFilters.includes(card.dataset.impact);
+            }
+
+            // Check tools filters
+            if (toolsFilters.length > 0) {
+                const cardTools = card.dataset.tools.split(' ');
+                show = show && toolsFilters.some(filter => cardTools.includes(filter));
+            }
+
+            if (show) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        document.getElementById('results-count').textContent = visibleCount;
+    }
+
+    // Clear All Filters
+    function clearAllFilters() {
+        // Clear checkboxes
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+
+        // Reset industry filter
+        const allBtn = document.querySelector('.filter-btn[onclick*="all"]');
+        if (allBtn) {
+            allBtn.innerHTML = `<svg class="w-4 h-4 mr-1 inline" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.475 2 2 6.475 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.866-.014-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.091-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.03-2.682-.104-.253-.448-1.27.098-2.647 0 0 .84-.269 2.75 1.026A9.564 9.564 0 0112 7.844c.85.004 1.705.114 2.504.334 1.91-1.295 2.75-1.026 2.75-1.026.546 1.377.202 2.394.1 2.647.64.698 1.028 1.591 1.028 2.682 0 3.841-2.337 4.687-4.565 4.935.359.308.678.916.678 1.847 0 1.332-.012 2.406-.012 2.734 0 .267.18.577.688.479C19.138 20.161 22 16.418 22 12c0-5.525-4.475-10-10-10z"/></svg> ${allBtn.textContent.trim()}`;
+            allBtn.click();
+        }
+
+        // Show all cards
+        document.querySelectorAll('.case-study-card').forEach(card => {
+            card.style.display = 'block';
+        });
+
+        document.getElementById('results-count').textContent = document.querySelectorAll('.case-study-card').length;
+    }
+
+    // Search Functionality
+    document.getElementById('search-input').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll('.case-study-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const title = card.querySelector('h3').textContent.toLowerCase();
+            const description = card.querySelector('p').textContent.toLowerCase();
+            const industry = card.dataset.industry.toLowerCase();
+            const techniques = card.dataset.technique.toLowerCase();
+
+            if (title.includes(searchTerm) || description.includes(searchTerm) ||
+                industry.includes(searchTerm) || techniques.includes(searchTerm)) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        document.getElementById('results-count').textContent = visibleCount;
+    });
+
+    // Open Case Study Modal
+    function openCaseStudy(caseId) {
+        const modal = document.getElementById('case-study-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalContent = document.getElementById('modal-content');
+
+        // Case study data
+        const caseStudies = {
+            'clv-optimization': {
+                title: 'Customer Lifetime Value Optimization',
+                content: `
+                    <div class="space-y-8">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-semibold text-primary mb-4">Business Challenge</h3>
+                                <p class="text-text-secondary mb-4">
+                                    A major e-commerce platform was experiencing declining customer retention rates and needed to identify high-value customers for targeted marketing campaigns. The challenge was to predict customer lifetime value and optimize marketing spend allocation.
+                                </p>
+                                <div class="bg-surface-50 rounded-lg p-4">
+                                    <h4 class="font-semibold text-primary mb-2">Key Objectives:</h4>
+                                    <ul class="text-sm text-text-secondary space-y-1">
+                                        <li>• Increase customer retention by 25%</li>
+                                        <li>• Improve marketing ROI by 40%</li>
+                                        <li>• Identify high-value customer segments</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3"
+                                     alt="E-commerce Dashboard" class="w-full h-64 object-cover rounded-lg" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;">
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold text-primary mb-4">Technical Approach</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 font-code text-sm overflow-x-auto mb-4">
+                                <pre class="text-green-400"><code>
+# Customer Segmentation and CLV Prediction
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.cluster import KMeans
+
+# Feature engineering for CLV prediction
+def create_clv_features(df):
+    features = df.groupby('customer_id').agg({
+        'order_value': ['mean', 'sum', 'count'],
+        'days_since_last_order': 'min',
+        'product_category': lambda x: x.nunique()
+    }).round(2)
+
+    return features
+
+# Train CLV prediction model
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+X_train, y_train = prepare_features(training_data)
+model.fit(X_train, y_train)
+
+print(f"Model R² Score: {model.score(X_test, y_test):.3f}")</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-success-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-success mb-2">+34%</div>
+                                <div class="text-sm text-text-secondary">Customer Retention Increase</div>
+                            </div>
+                            <div class="bg-primary-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-primary mb-2">$2.1M</div>
+                                <div class="text-sm text-text-secondary">Additional Revenue Generated</div>
+                            </div>
+                            <div class="bg-accent-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-accent mb-2">47%</div>
+                                <div class="text-sm text-text-secondary">Marketing ROI Improvement</div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            'patient-readmission': {
+                title: 'Patient Readmission Prediction',
+                content: `
+                    <div class="space-y-8">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-semibold text-primary mb-4">Healthcare Challenge</h3>
+                                <p class="text-text-secondary mb-4">
+                                    A regional health system needed to reduce costly patient readmissions while maintaining quality care. The goal was to identify high-risk patients and implement preventive interventions.
+                                </p>
+                                <div class="bg-surface-50 rounded-lg p-4">
+                                    <h4 class="font-semibold text-primary mb-2">Success Metrics:</h4>
+                                    <ul class="text-sm text-text-secondary space-y-1">
+                                        <li>• 28% reduction in readmissions</li>
+                                        <li>• $3.2M in cost savings</li>
+                                        <li>• 92% model accuracy</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                <img src="https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+                                    alt="Healthcare Analytics" class="w-full h-64 object-cover rounded-lg" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;">
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold text-primary mb-4">Technical Approach</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 font-code text-sm overflow-x-auto mb-4">
+                                <pre class="text-green-400"><code>
+# Patient Readmission Prediction Model
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+
+# Prepare patient data
+def preprocess_data(df):
+    df['age_group'] = pd.cut(df['age'], bins=[0, 30, 50, 70, 100], labels=['0-30', '31-50', '51-70', '71+'])
+    df['days_since_discharge'] = (pd.to_datetime('today') - pd.to_datetime(df['discharge_date'])).dt.days
+    return df
+
+# Train prediction model
+data = preprocess_data(patient_data)
+X = data[['age_group', 'days_since_discharge', 'length_of_stay', 'comorbidities']]
+y = data['readmitted']
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+model = RandomForestClassifier(n_estimators=150, random_state=42)
+model.fit(X_scaled, y)
+
+print(f"Model Accuracy: {model.score(X_scaled, y):.2%}")</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-success-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-success mb-2">-28%</div>
+                                <div class="text-sm text-text-secondary">Readmission Rate</div>
+                            </div>
+                            <div class="bg-primary-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-primary mb-2">$3.2M</div>
+                                <div class="text-sm text-text-secondary">Cost Savings</div>
+                            </div>
+                            <div class="bg-accent-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-accent mb-2">92%</div>
+                                <div class="text-sm text-text-secondary">Prediction Accuracy</div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+
+            'House-Price-Prediction': {
+                title: 'House Price Prediction',
+                content: `
+                    <div class="space-y-8">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-semibold text-primary mb-4">Business Challenge</h3>
+                                <p class="text-text-secondary mb-4">
+                                    A real estate firm aimed to improve its house price prediction accuracy to assist buyers and sellers in making informed decisions. The challenge was to develop a robust model that accurately predicts house prices based on various property features, adapting to diverse market trends.
+                                </p>
+                                <div class="bg-surface-50 rounded-lg p-4">
+                                    <h4 class="font-semibold text-primary mb-2">Key Objectives:</h4>
+                                    <ul class="text-sm text-text-secondary space-y-1">
+                                        <li>• Achieve a mean absolute error (MAE) below 10%</li>
+                                        <li>• Maintain an R² score above 0.85</li>
+                                        <li>• Automate price predictions with high reliability</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                <img src=https://etedge-insights.com/wp-content/uploads/2025/04/real-estate-2.jpg"
+                                    alt="House Price Prediction Dashboard" class="w-full h-64 object-cover rounded-lg">
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-primary mb-4">Technical Approach</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 font-code text-sm overflow-x-auto mb-4">
+                                <pre class="text-green-400"><code>
+# House Price Prediction Model
+import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, r2_score
+
+# Feature engineering for house data
+def generate_features(df):
+    df['age'] = 2025 - df['year_built']
+    df['price_per_sqft'] = df['price'] / df['sqft_living']
+    df['location_score'] = df['zipcode'].map(location_value_map)
+    return df.dropna()
+
+# Train house price prediction model
+data = pd.read_csv('house_data.csv')
+features = generate_features(data)
+X = features[['age', 'sqft_living', 'bedrooms', 'bathrooms', 'price_per_sqft', 'location_score']]
+y = features['price']
+
+model = RandomForestRegressor(n_estimators=200, random_state=42)
+model.fit(X, y)
+
+# Evaluate model
+y_pred = model.predict(X)
+mae = mean_absolute_error(y, y_pred) / y.mean() * 100
+r2 = r2_score(y, y_pred)
+
+print(f"Mean Absolute Error (%): {mae:.2f}%")
+print(f"R² Score: {r2:.3f}")
+                    </code></pre>
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-success-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-success mb-2">8.5%</div>
+                                <div class="text-sm text-text-secondary">Mean Absolute Error</div>
+                            </div>
+                            <div class="bg-primary-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-primary mb-2">0.89</div>
+                                <div class="text-sm text-text-secondary">R² Score</div>
+                            </div>
+                            <div class="bg-accent-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-accent mb-2">92%</div>
+                                <div class="text-sm text-text-secondary">Prediction Accuracy</div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            'supply-chain': {
+                title: 'Supply Chain Optimization',
+                content: `
+                    <div class="space-y-8">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-semibold text-primary mb-4">Business Challenge</h3>
+                                <p class="text-text-secondary mb-4">
+                                    A global manufacturer faced inefficiencies in its supply chain, leading to high inventory costs and delayed deliveries. The goal was to optimize inventory levels and improve delivery performance using predictive analytics.
+                                </p>
+                                <div class="bg-surface-50 rounded-lg p-4">
+                                    <h4 class="font-semibold text-primary mb-2">Key Objectives:</h4>
+                                    <ul class="text-sm text-text-secondary space-y-1">
+                                        <li>• Reduce inventory costs by 25%</li>
+                                        <li>• Improve delivery times by 15%</li>
+                                        <li>• Enhance supply chain visibility</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2426&auto=format&fit=crop&ixlib=rb-4.0.3"
+                                    alt="Supply Chain Dashboard" class="w-full h-64 object-cover rounded-lg">
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold text-primary mb-4">Technical Approach</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 font-code text-sm overflow-x-auto mb-4">
+                                <pre class="text-green-400"><code>
+# Supply Chain Optimization Model
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
+
+# Prepare supply chain data
+def preprocess_data(df):
+    df['lead_time'] = pd.to_timedelta(df['lead_time']).dt.days
+    df['inventory_level'] = df['inventory'] / df['demand']
+    return df
+
+# Train predictive model
+data = preprocess_data(supply_chain_data)
+X = data[['lead_time', 'inventory_level', 'demand']]
+y = data['delivery_time']
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+model = LinearRegression()
+model.fit(X_scaled, y)
+
+print(f"Model R² Score: {model.score(X_scaled, y):.2f}")</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-success-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-success mb-2">-31%</div>
+                                <div class="text-sm text-text-secondary">Inventory Costs</div>
+                            </div>
+                            <div class="bg-primary-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-primary mb-2">+18%</div>
+                                <div class="text-sm text-text-secondary">Delivery Speed</div>
+                            </div>
+                            <div class="bg-accent-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-accent mb-2">$1.8M</div>
+                                <div class="text-sm text-text-secondary">Cost Savings</div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            'demand-forecasting': {
+                title: 'Demand Forecasting System',
+                content: `
+                    <div class="space-y-8">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-semibold text-primary mb-4">Business Challenge</h3>
+                                <p class="text-text-secondary mb-4">
+                                    A retail chain struggled with inaccurate demand forecasts, leading to frequent stockouts and overstock situations. The objective was to develop a forecasting system to improve inventory accuracy and reduce stockouts.
+                                </p>
+                                <div class="bg-surface-50 rounded-lg p-4">
+                                    <h4 class="font-semibold text-primary mb-2">Key Objectives:</h4>
+                                    <ul class="text-sm text-text-secondary space-y-1">
+                                        <li>• Improve forecast accuracy by 40%</li>
+                                        <li>• Reduce stockouts by 30%</li>
+                                        <li>• Optimize inventory turnover</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                <img src="https://images.pexels.com/photos/264636/pexels-photo-264636.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2"
+                                    alt="Retail Inventory Dashboard" class="w-full h-64 object-cover rounded-lg">
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold text-primary mb-4">Technical Approach</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 font-code text-sm overflow-x-auto mb-4">
+                                <pre class="text-green-400"><code>
+# Demand Forecasting Model
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import GradientBoostingRegressor
+import numpy as np
+
+# Load and prepare time series data
+def prepare_data(df):
+    df['date'] = pd.to_datetime(df['date'])
+    df['month'] = df['date'].dt.month
+    df['day_of_week'] = df['date'].dt.dayofweek
+    return df
+
+# Train forecasting model
+data = prepare_data(sales_data)
+X = data[['month', 'day_of_week', 'sales_lag1']]
+y = data['sales']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = GradientBoostingRegressor(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+print(f"Model R² Score: {model.score(X_test, y_test):.2f}")</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-success-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-success mb-2">+42%</div>
+                                <div class="text-sm text-text-secondary">Forecast Accuracy</div>
+                            </div>
+                            <div class="bg-primary-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-primary mb-2">-35%</div>
+                                <div class="text-sm text-text-secondary">Stockouts</div>
+                            </div>
+                            <div class="bg-accent-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-accent mb-2">$850K</div>
+                                <div class="text-sm text-text-secondary">Cost Savings</div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            'sentiment-analysis': {
+                title: 'Social Media Sentiment Analysis',
+                content: `
+                    <div class="space-y-8">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-semibold text-primary mb-4">Business Challenge</h3>
+                                <p class="text-text-secondary mb-4">
+                                    A retail brand needed to monitor and analyze social media sentiment to detect potential PR crises and understand customer perceptions in real time. The challenge was to process millions of social media mentions efficiently.
+                                </p>
+                                <div class="bg-surface-50 rounded-lg p-4">
+                                    <h4 class="font-semibold text-primary mb-2">Key Objectives:</h4>
+                                    <ul class="text-sm text-text-secondary space-y-1">
+                                        <li>• Analyze 2M+ social mentions daily</li>
+                                        <li>• Achieve 85%+ sentiment classification accuracy</li>
+                                        <li>• Enable real-time crisis detection</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3"
+                                    alt="Social Media Analytics Dashboard" class="w-full h-64 object-cover rounded-lg">
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold text-primary mb-4">Technical Approach</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 font-code text-sm overflow-x-auto mb-4">
+                                <pre class="text-green-400"><code>
+# Sentiment Analysis Model
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+
+# Load and preprocess social media data
+def preprocess_text(df):
+    df['cleaned_text'] = df['text'].str.lower().str.replace(r'[^\w\s]', '')
+    return df
+
+# Vectorize and train model
+vectorizer = TfidfVectorizer(max_features=5000)
+model = LogisticRegression(random_state=42)
+
+X = vectorizer.fit_transform(preprocess_text(data)['cleaned_text'])
+y = data['sentiment']
+model.fit(X, y)
+
+print(f"Model Accuracy: {model.score(X_test, y_test):.2%}")</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-success-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-success mb-2">2M+</div>
+                                <div class="text-sm text-text-secondary">Mentions Analyzed</div>
+                            </div>
+                            <div class="bg-primary-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-primary mb-2">89%</div>
+                                <div class="text-sm text-text-secondary">Classification Accuracy</div>
+                            </div>
+                            <div class="bg-accent-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-accent mb-2">Real-time</div>
+                                <div class="text-sm text-text-secondary">Crisis Detection</div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            // --- NEW/IMPROVED CASE STUDY DETAILS BELOW ---
+            'fraud-detection': {
+                title: 'Fraud Detection System',
+                content: `
+                    <div class="space-y-8">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-semibold text-primary mb-4">Business Challenge</h3>
+                                <p class="text-text-secondary mb-4">
+                                    A financial institution faced increasing losses due to fraudulent transactions. The goal was to implement a robust fraud detection system that could identify and prevent fraudulent activities in real time, minimizing financial risk and improving customer trust.
+                                </p>
+                                <div class="bg-surface-50 rounded-lg p-4">
+                                    <h4 class="font-semibold text-primary mb-2">Key Objectives:</h4>
+                                    <ul class="text-sm text-text-secondary space-y-1">
+                                        <li>• Reduce fraud rate by 30%+</li>
+                                        <li>• Achieve detection accuracy above 90%</li>
+                                        <li>• Real-time transaction monitoring</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                <img src="https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3"
+                                     alt="Fraud Detection Dashboard" class="w-full h-64 object-cover rounded-lg" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;">
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-primary mb-4">Technical Approach</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 font-code text-sm overflow-x-auto mb-4">
+                                <pre class="text-green-400"><code>
+# Fraud Detection Model
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+
+# Feature engineering for transaction data
+def create_features(df):
+    df['amount_log'] = np.log1p(df['amount'])
+    df['hour'] = pd.to_datetime(df['timestamp']).dt.hour
+    return df
+
+# Train model
+model = RandomForestClassifier(n_estimators=200, random_state=42)
+X_train, y_train = prepare_features(training_data)
+model.fit(X_train, y_train)
+
+print(f"Model Accuracy: {model.score(X_test, y_test):.2%}")</code></pre>
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-success-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-success mb-2">-40%</div>
+                                <div class="text-sm text-text-secondary">Fraud Rate</div>
+                            </div>
+                            <div class="bg-primary-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-primary mb-2">95%</div>
+                                <div class="text-sm text-text-secondary">Detection Accuracy</div>
+                            </div>
+                            <div class="bg-accent-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-accent mb-2">$5M</div>
+                                <div class="text-sm text-text-secondary">Cost Savings</div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            'online-sales': {
+                title: 'Online Sales Data Analysis',
+                content: `
+                    <div class="space-y-8">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-semibold text-primary mb-4">Business Challenge</h3>
+                                <p class="text-text-secondary mb-4">
+                                    An e-commerce company sought to optimize its online sales performance by analyzing customer purchase data to uncover trends, improve inventory management, and enhance marketing strategies. The challenge was to develop a robust data analysis pipeline to extract actionable insights from large-scale sales data.
+                                </p>
+                                <div class="bg-surface-50 rounded-lg p-4">
+                                    <h4 class="font-semibold text-primary mb-2">Key Objectives:</h4>
+                                    <ul class="text-sm text-text-secondary space-y-1">
+                                        <li>• Increase sales revenue by 15%+</li>
+                                        <li>• Reduce inventory costs by 10%</li>
+                                        <li>• Improve customer retention through targeted insights</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                <img src="https://images.unsplash.com/photo-1666875753105-c63a6f3bdc86?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3"
+                                    alt="Online Sales Analytics Dashboard" class="w-full h-64 object-cover rounded-lg" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;">
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-primary mb-4">Technical Approach</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 font-code text-sm overflow-x-auto mb-4">
+                                <pre class="text-green-400"><code>
+# Online Sales Data Analysis
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LinearRegression
+
+# Load and preprocess sales data
+def preprocess_sales_data(df):
+    df['order_date'] = pd.to_datetime(df['order_date'])
+    df['month'] = df['order_date'].dt.month
+    df['total_sales'] = df['quantity'] * df['unit_price']
+    df['customer_segment'] = pd.qcut(df['total_sales'], q=4, labels=['Low', 'Medium', 'High', 'VIP'])
+    return df.dropna()
+
+# Analyze sales trends
+data = pd.read_csv('sales_data.csv')
+processed_data = preprocess_sales_data(data)
+
+# Predict future sales
+X = processed_data[['month', 'quantity', 'unit_price']]
+y = processed_data['total_sales']
+model = LinearRegression()
+model.fit(X, y)
+
+print(f"Model R² Score: {model.score(X, y):.3f}")
+                    </code></pre>
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-success-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-success mb-2">+18%</div>
+                                <div class="text-sm text-text-secondary">Sales Revenue</div>
+                            </div>
+                            <div class="bg-primary-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-primary mb-2">12%</div>
+                                <div class="text-sm text-text-secondary">Inventory Cost Reduction</div>
+                            </div>
+                            <div class="bg-accent-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-accent mb-2">90%</div>
+                                <div class="text-sm text-text-secondary">Customer Retention Rate</div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+
+            'predictive-maintenance': {
+                title: 'Predictive Maintenance for Manufacturing',
+                content: `
+                    <div class="space-y-8">
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-semibold text-primary mb-4">Business Challenge</h3>
+                                <p class="text-text-secondary mb-4">
+                                    A manufacturing plant experienced frequent equipment failures, resulting in costly downtime and repairs. The objective was to implement a predictive maintenance system to anticipate failures and optimize maintenance schedules.
+                                </p>
+                                <div class="bg-surface-50 rounded-lg p-4">
+                                    <h4 class="font-semibold text-primary mb-2">Key Objectives:</h4>
+                                    <ul class="text-sm text-text-secondary space-y-1">
+                                        <li>• Reduce equipment downtime by 25%+</li>
+                                        <li>• Save $1M+ in maintenance costs</li>
+                                        <li>• Enable real-time monitoring and alerts</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                <img src="https://images.unsplash.com/photo-1504639725590-34d0984388bd?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3"
+                                     alt="Predictive Maintenance Dashboard" class="w-full h-64 object-cover rounded-lg" onerror="this.src='https://via.placeholder.com/300'; this.onerror=null;">
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-semibold text-primary mb-4">Technical Approach</h3>
+                            <div class="bg-gray-900 rounded-lg p-4 font-code text-sm overflow-x-auto mb-4">
+                                <pre class="text-green-400"><code>
+# Predictive Maintenance Model
+import pandas as pd
+from sklearn.ensemble import GradientBoostingClassifier
+
+# Feature engineering for sensor data
+def create_features(df):
+    df['rolling_mean'] = df['sensor_reading'].rolling(window=10).mean()
+    df['rolling_std'] = df['sensor_reading'].rolling(window=10).std()
+    return df.dropna()
+
+# Train model
+model = GradientBoostingClassifier(n_estimators=150, random_state=42)
+X_train, y_train = prepare_features(training_data)
+model.fit(X_train, y_train)
+
+print(f"Model Accuracy: {model.score(X_test, y_test):.2%}")</code></pre>
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-success-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-success mb-2">-30%</div>
+                                <div class="text-sm text-text-secondary">Downtime</div>
+                            </div>
+                            <div class="bg-primary-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-primary mb-2">$2M</div>
+                                <div class="text-sm text-text-secondary">Cost Savings</div>
+                            </div>
+                            <div class="bg-accent-50 rounded-lg p-6 text-center">
+                                <div class="text-3xl font-bold text-accent mb-2">Real-time</div>
+                                <div class="text-sm text-text-secondary">Monitoring & Alerts</div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            }
+        };
+
+        const study = caseStudies[caseId];
+        if (study) {
+            modalTitle.textContent = study.title;
+            modalContent.innerHTML = study.content;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    // Close Case Study Modal
+    function closeCaseStudy() {
+        const modal = document.getElementById('case-study-modal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    // Load More Projects
+    function loadMoreProjects(event) {
+        const button = event ? event.target : document.querySelector('.btn-secondary[onclick*="loadMoreProjects"]');
+        if (!button) return;
+        button.innerHTML = '<svg class="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Loading...';
+
+        setTimeout(() => {
+            button.innerHTML = '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>All Projects Loaded';
+            button.disabled = true;
+            button.classList.add('opacity-50', 'cursor-not-allowed');
+        }, 2000);
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('case-study-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeCaseStudy();
+        }
+    });
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set initial results count
+        document.getElementById('results-count').textContent = document.querySelectorAll('.case-study-card').length;
+
+        // Fix filter button event handlers for accessibility and event parameter
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.onclick = function(event) {
+                const industry = btn.textContent.trim().toLowerCase().replace('&', '').replace(' ', '');
+                filterProjects(industry === 'allprojects' ? 'all' : industry, event);
+            };
+        });
+    });
+</script>
+<script id="dhws-dataInjector" src="../static/js/dhws-data-injector.js"></script>
+</body>
+</html>
