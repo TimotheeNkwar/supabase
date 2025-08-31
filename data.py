@@ -4,7 +4,7 @@ import os
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import logging
-
+import uuid
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,11 +14,11 @@ load_dotenv()
 
 # Supabase configuration
 # Replace with your actual Supabase URL and anon key, or use environment variables
-SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+SUPABASE_URL = os.getenv('SUPABASE_URL','https://gtinadlpbreniysssjai.supabase.co')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0aW5hZGxwYnJlbml5c3NzamFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzMTE3MjcsImV4cCI6MjA2OTg4NzcyN30.LLrCSXgAF30gFq5BrHZhc_KEiasF8LfyZTEExbfwjUk')
 
 # Validate Supabase credentials
-if SUPABASE_URL == 'https://your-project-id.supabase.co' or SUPABASE_KEY == 'your-anon-key':
+if not SUPABASE_URL or not SUPABASE_KEY:
     logger.error("Invalid Supabase credentials. Please set SUPABASE_URL and SUPABASE_KEY.")
     raise ValueError("Supabase URL and key must be provided via environment variables or directly in the script.")
 
@@ -34,7 +34,7 @@ except Exception as e:
 # Replace with your actual file path or use the JSON string directly
 json_file_path = 'articles_metadata.json'
 try:
-    with open(json_file_path, 'r') as file:
+    with open(json_file_path, 'r', encoding='utf-8') as file:
         articles_data = json.load(file)
     logger.info("Successfully loaded articles metadata from JSON file.")
 except FileNotFoundError:
@@ -50,13 +50,14 @@ def insert_articles():
         try:
             # Prepare data for insertion
             data = {
+                "uuid": str(uuid.uuid4()),
                 "title": article.get("title"),
                 "category": article.get("category"),
                 "description": article.get("description"),
+                "content": article.get("content"),
                 "tags": article.get("tags"),  # Stored as TEXT[] in Supabase
                 "image": article.get("image"),
-                "read_time": article.get("read_time"),
-                "content": article.get("content")
+                "read_time": article.get("read_time")
             }
             
             # Insert into 'articles' table
