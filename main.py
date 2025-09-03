@@ -830,6 +830,7 @@ def update_article(article_id):
         data = request.get_json()
         if not data or not data.get('title'):
             return jsonify({'error': 'Title is required'}), 400
+
         tags = ','.join([tag.strip() for tag in data.get('tags', [])])
         result = supabase.table('articles').update({
             'title': data.get('title', 'Untitled Article'),
@@ -839,7 +840,8 @@ def update_article(article_id):
             'image': data.get('image', ''),
             'read_time': data.get('read_time', 5),
             'content': data.get('content', ''),
-            'updated_by': current_user.id
+            'updated_by': current_user.id,
+            'updated_at': datetime.now(timezone.utc).isoformat()
         }).eq('uuid', article_id).execute()
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
@@ -848,7 +850,9 @@ def update_article(article_id):
     except Exception as e:
         logger.error(f"Error updating article {article_id}: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
+    
 
+    
 @api.route('/articles/<article_id>', methods=['DELETE'])
 @limiter.limit("5 per minute")
 @login_required
