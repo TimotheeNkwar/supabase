@@ -1722,12 +1722,12 @@ def handle_track_view(data):
     if article_id:
         try:
             # Get current views
-            response = supabase.table('articles').select('views').eq('uuid', article_id).single().execute()
+            response = supabase.table('articles').select('views').eq('id', article_id).single().execute()
             current_views = response.data['views'] if response.data and 'views' in response.data else 0
             # Increment views
-            supabase.table('articles').update({'views': current_views + 1}).eq('uuid', article_id).execute()
+            supabase.table('articles').update({'views': current_views + 1}).eq('id', article_id).execute()
             # Fetch new views count
-            result = supabase.table('articles').select('views').eq('uuid', article_id).single().execute()
+            result = supabase.table('articles').select('views').eq('id', article_id).single().execute()
             new_views = result.data['views'] if result.data and 'views' in result.data else 0
             socketio.emit('article_update', {'id': article_id, 'views': new_views})
             logger.info(f"Tracked view for article {article_id}, new views: {new_views}")
