@@ -352,52 +352,6 @@ def load_model(model_type: str) -> Optional[Union[object]]:
 
 
 
-def load_dataset(dataset_name):
-
-    """
-    Load a dataset from file.
-
-    Args:
-        dataset_name (str): Name of dataset to load.
-
-    Returns:
-        pd.DataFrame: Loaded dataset.
-
-    Raises:
-        ValueError: If dataset name is unknown.
-        IOError: If dataset file is not found.
-        Exception: If any other error occurs during loading.
-    """
-
-
-    if dataset_name not in datasets:
-        logger.error(f"Invalid dataset name: {dataset_name}")
-        raise ValueError(f"Unknown dataset name: {dataset_name}")
-    if datasets[dataset_name] is not None:
-        logger.debug(f"{dataset_name} dataset already loaded from cache")
-        return datasets[dataset_name]
-    try:
-        file_path = DATA_FILES[dataset_name]
-        logger.info(f"Loading {dataset_name} dataset from {file_path}")
-        if not os.path.exists(file_path):
-            logger.error(f"Dataset file not found: {file_path}")
-            raise IOError(f"Dataset file not found: {file_path}")
-        df = pd.read_csv(file_path, quotechar='"', escapechar='\\')
-        if dataset_name == 'retail_price':
-            df['month_year'] = pd.to_datetime(df['month_year'], format='%m-%d-%Y')
-            df = df.dropna()
-        datasets[dataset_name] = df
-        logger.info(f"{dataset_name} dataset loaded successfully.")
-        return datasets[dataset_name]
-    except Exception as e:
-        logger.error(f"Error loading {dataset_name} dataset: {str(e)}")
-        datasets[dataset_name] = pd.DataFrame()
-        return datasets[dataset_name]
-
-
-
-
-
 
 
 
@@ -1779,12 +1733,6 @@ def rate_limit_exceeded():
 
 
 # Initialize models and datasets at startup
-try:
-    initialize_models()
-except Exception as e:
-    logger.error(f"Failed to initialize models at startup: {str(e)}")
-df_price = load_dataset('retail_price')
-MOVIES_DATA = load_dataset('movies').set_index('movieId').to_dict('index') if not load_dataset('movies').empty else {}
 
 # Register API blueprint
 app.register_blueprint(api, url_prefix='/api')
