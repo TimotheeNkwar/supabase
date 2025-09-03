@@ -134,7 +134,7 @@ def datetimeformat(value, format='%d/%m/%Y %H:%M'):
 
 app.jinja_env.filters['datetimeformat'] = datetimeformat
 app.jinja_env.filters['custom_markdown'] = custom_markdown
-
+app.jinja_env.filters['formatViews'] = format_views
 
 # User class for Flask-Login
 class User(UserMixin):
@@ -171,6 +171,25 @@ def get_client_ip(request):
     else:
         ip = request.remote_addr or "127.0.0.1"
     return ip
+
+def datetimeformat(value, format='%d/%m/%Y %H:%M'):
+    if value is None:
+        return ''
+    if isinstance(value, str):
+        try:
+            if 'T' in value:
+                value = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            else:
+                value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+        except (ValueError, TypeError):
+            return value
+    return value.strftime(format)
+
+def format_views(views):
+    if views >= 1000:
+        return f"{(views / 1000):.1f}K views"
+    return f"{views} view{'s' if views != 1 else ''}"
+
 
 
 
