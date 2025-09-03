@@ -134,7 +134,7 @@ def datetimeformat(value, format='%d/%m/%Y %H:%M'):
 
 app.jinja_env.filters['datetimeformat'] = datetimeformat
 app.jinja_env.filters['custom_markdown'] = custom_markdown
-app.jinja_env.filters['formatViews'] = format_views
+app.jinja_env.filters['format_views'] = lambda v: f"{(v / 1000):.1f}K views" if v >= 1000 else f"{v} view{'s' if v != 1 else ''}"
 
 # User class for Flask-Login
 class User(UserMixin):
