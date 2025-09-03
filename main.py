@@ -873,7 +873,7 @@ def toggle_article_visibility(article_id):
         data = request.get_json()
         hidden = data.get('hidden', False)
         # --- SUPABASE IMPLEMENTATION ---
-        result = supabase.table('articles').update({'hidden': hidden}).eq('id', article_id).execute()
+        result = supabase.table('articles').update({'hidden': hidden}).eq('uuid', article_id).execute()
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
         socketio.emit('article_visibility_changed', {'articleId': article_id, 'hidden': hidden})
