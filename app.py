@@ -41,8 +41,8 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Supabase configuration
-SUPABASE_URL = os.getenv('SUPABASE_URL', 'https://gtinadlpbreniysssjai.supabase.co')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0aW5hZGxwYnJlbml5c3NzamFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzMTE3MjcsImV4cCI6MjA2OTg4NzcyN30.LLrCSXgAF30gFq5BrHZhc_KEiasF8LfyZTEExbfwjUk')
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY')
 
 # Initialize Supabase client
 try:
@@ -106,10 +106,14 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    response = supabase.table('users').select('id, username').eq('id', user_id).execute()
-    if response.data:
-        return User(id=response.data[0]['id'], username=response.data[0]['username'])
-    return None
+    try:
+        response = supabase.table('users').select('id, username').eq('id', user_id).execute()
+        if response.data and len(response.data) > 0:
+            return User(id=response.data[0]['id'], username=response.data[0]['username'])
+        return None
+    except Exception as e:
+        logger.error(f"Error loading user {user_id}: {str(e)}")
+        return None
 
 # Client IP and local time functions
 def get_client_ip(request):
@@ -206,21 +210,27 @@ load_dataset('movies')
 # Initialize default admin and articles in Supabase
 def init_db():
     # Initialize users
-    response = supabase.table('users').select('count', count=True).execute()
-    if response.data[0]['count'] == 0:
-        username = os.getenv('DEFAULT_ADMIN_USERNAME', 'admin')
-        password = os.getenv('DEFAULT_ADMIN_PASSWORD')
-        if not password:
-            raise ValueError("DEFAULT_ADMIN_PASSWORD not set")
-        password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        email = os.getenv('DEFAULT_ADMIN_EMAIL', 'timotheenkwar16@gmail.com')
-        supabase.table('users').insert({
-            'username': username,
-            'password_hash': password_hash,
-            'email': email,
-            'is_active': True
-        }).execute()
-        logger.warning(f"Default admin created: {username}. Change password!")
+    try:
+        response = supabase.table('users').select('count', count=True).execute()
+        if response.data[0]['count'] == 0:
+            username = os.getenv('DEFAULT_ADMIN_USERNAME', 'admin')
+            password = os.getenv('DEFAULT_ADMIN_PASSWORD')
+            if not password:
+                raise ValueError("DEFAULT_ADMIN_PASSWORD not set")
+            password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            email = os.getenv('DEFAULT_ADMIN_EMAIL', 'timotheenkwar16@gmail.com')
+            supabase.table('users').insert({
+                'id': str(uuid.uuid4()),
+                'username': username,
+                'password_hash': password_hash,
+                'email': email,
+                'is_active': True,
+                'created_at': datetime.now(pytz.utc).isoformat()
+            }).execute()
+            logger.warning(f"Default admin created: {username}. Change password!")
+    except Exception as e:
+        logger.error(f"Error initializing users: {str(e)}")
+        raise
 
     # Sync articles from JSON file
     try:
@@ -228,20 +238,21 @@ def init_db():
             articles_metadata = json.load(file)
         
         for key, meta in articles_metadata.items():
-            uuid_val = str(uuid.uuid4())
             existing = supabase.table('articles').select('id').eq('title', meta.get('title')).execute()
             if not existing.data:
                 supabase.table('articles').insert({
+                    'id': str(uuid.uuid4()),
                     'uuid': str(uuid.uuid4()),
-                    'title': meta.get('title'),
+                    'title': meta.get('title', ''),
                     'content': meta.get('content', ''),
-                    'category': meta.get('category'),
-                    'description': meta.get('description'),
-                    'tags': meta.get('tags'),
-                    'image': meta.get('image'),
-                    'read_time': meta.get('read_time'),
+                    'category': meta.get('category', ''),
+                    'description': meta.get('description', ''),
+                    'tags': meta.get('tags', []),
+                    'image': meta.get('image', ''),
+                    'read_time': meta.get('read_time', 0),
                     'hidden': False,
-                    'views': 0
+                    'views': 0,
+                    'created_at': datetime.now(pytz.utc).isoformat()
                 }).execute()
                 logger.info(f"Inserted article: {meta.get('title')}")
     except Exception as e:
@@ -250,9 +261,9 @@ def init_db():
 # Call init_db at startup
 init_db()
 
-# API Blueprint (adapt queries to Supabase)
+# API Blueprint
 api = Blueprint('api', __name__)
-# Route pour calculer le prix optimal
+
 @app.route('/api/optimize-price', methods=['POST'])
 def optimize_price():
     """
@@ -287,7 +298,6 @@ def optimize_price():
         - success : True,
         - data : prix optimal, augmentation de revenu, stratégie de prix.
     """
-
     try:
         data = request.get_json()
         competitor_price = float(data.get('competitorPrice'))
@@ -302,18 +312,18 @@ def optimize_price():
                 "message": "Please provide valid numeric values"
             }), 400
 
-        # Logique d'optimisation (identique au frontend)
+        # Logique d'optimisation
         optimal_price = competitor_price
         high_demand_multiplier = 1.05
         low_inventory_multiplier = 1.03
         low_demand_multiplier = 0.95
 
-        # Ajustements spécifiques par catégorie (optionnel)
+        # Ajustements spécifiques par catégorie
         category_multipliers = {
-            "electronics": 1.02,  # Légère augmentation pour produits premium
-            "clothing": 0.98,     # Légère réduction pour compétitivité
-            "books": 1.0,         # Neutre
-            "home": 1.01          # Légère augmentation
+            "electronics": 1.02,
+            "clothing": 0.98,
+            "books": 1.0,
+            "home": 1.01
         }
         category_multiplier = category_multipliers.get(product_category, 1.0)
         optimal_price *= category_multiplier
@@ -334,10 +344,8 @@ def optimize_price():
         else:
             price_strategy = "Same price as competitor. Stay aligned with the market."
 
-
         ip_address = get_remote_address()
         tz, local_time = get_local_time_from_ip(ip_address)
-        # Store the optimization data in pricing_analyses collection
         optimization_data = {
             "type": "optimize_price",
             "input": {
@@ -352,10 +360,9 @@ def optimize_price():
                 "priceStrategy": price_strategy
             },
             "timestamp": local_time,
-            "ip_address":ip_address,
+            "ip_address": ip_address,
             "timezone": tz
         }
-        # Store optimization data in Supabase
         supabase.table('pricing_analyses').insert(optimization_data).execute()
         logger.info(f"Stored optimization data in pricing_analyses: {optimization_data}")
 
@@ -374,21 +381,8 @@ def optimize_price():
             "error": str(e)
         }), 500
 
-
-
-
-
-
-
-
 def allowed_file(filename):
-
-    """Check if a file has an allowed extension.
-
-    :param filename: File name to check.
-    :return: True if the file has an allowed extension, False otherwise.
-    """
-
+    """Check if a file has an allowed extension."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 churn_feature_names = ['monthly_charges', 'tenure', 'total_charges', 'contract_type']
@@ -396,20 +390,7 @@ churn_feature_names = ['monthly_charges', 'tenure', 'total_charges', 'contract_t
 @app.route('/predict', methods=['POST'])
 @limiter.limit("10 per minute")
 def predict():
-
-    """Predict customer churn based on input data.
-
-    POST parameters:
-        - monthly_charges (float): Monthly charges of the customer.
-        - tenure (int): Number of months the customer has been subscribed.
-        - total_charges (float): Total charges of the customer.
-        - contract_type (string): Contract type of the customer. Can be "month-to-month", "one-year" or "two-year".
-
-    Returns a JSON object with the following keys:
-        - probability (float): Churn probability between 0 and 1.
-        - recommendation (string): Recommendation based on the churn probability.
-    """
-
+    """Predict customer churn based on input data."""
     try:
         data = request.get_json()
         if not data:
@@ -446,10 +427,8 @@ def predict():
             "Medium churn risk. Monitor engagement." if prediction >= 0.5 else
             "Low churn risk. Customer is likely loyal."
         )
-          # Récupérer IP & timezone locale
         ip_address = get_remote_address()
         tz, local_time = get_local_time_from_ip(ip_address)
-        # Store the prediction in churn_predictions collection
         prediction_data = {
             "input": {
                 "monthly_charges": monthly_charges,
@@ -463,7 +442,6 @@ def predict():
             "ip_address": ip_address,
             "timezone": tz
         }
-        # Store churn prediction in Supabase
         supabase.table('churn_predictions').insert(prediction_data).execute()
         logger.info(f"Stored churn prediction in churn_predictions: {prediction_data}")
 
@@ -478,11 +456,6 @@ def predict():
         logger.error(f"Unexpected error in predict: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
-
-
-
-
-
 @app.route("/")
 def home():
     logger.info("Serving home page")
@@ -491,9 +464,6 @@ def home():
     except Exception as e:
         logger.error(f"Template error: {e}")
         return jsonify({"error": "Failed to load page"}), 500
-
-
-
 
 @app.route("/skills_tools")
 def skills_tools():
@@ -504,39 +474,11 @@ def skills_tools():
         logger.error(f"Template error: {e}")
         return jsonify({"error": "Failed to load skills page"}), 500
 
-
-
-
-
-
-
 @app.route('/api/analyze-sentiment', methods=['POST'])
 @limiter.limit("5 per minute")
 def analyze_sentiment_gemini():
     """
     Analyze the sentiment of a given text using the Gemini API.
-
-    Example input:
-    {
-        "text": "I love this product",
-        "language": "en"
-    }
-
-    Example output:
-    {
-        "sentiment": "Positive",
-        "positive": 80,
-        "neutral": 10,
-        "negative": 10,
-        "insights": "The customer is very satisfied with the product."
-    }
-
-    :param text: The text to analyze
-    :type text: str
-    :param language: The language of the text (optional, default is auto)
-    :type language: str
-    :return: A JSON object with the sentiment analysis
-    :rtype: dict
     """
     logger.info("Received sentiment analysis request")
     try:
@@ -600,10 +542,8 @@ def analyze_sentiment_gemini():
             logger.error(f"Scores do not sum to 100: {scores}")
             return jsonify({'error': 'Scores do not sum to 100'}), 502
 
-        # Récupérer IP & timezone locale
         ip_address = get_remote_address()
         tz, local_time = get_local_time_from_ip(ip_address)
-        # Store the sentiment analysis in sentiment_analyses collection
         sentiment_data = {
             'text': escaped_text,
             'language': language,
@@ -612,7 +552,6 @@ def analyze_sentiment_gemini():
             'ip_address': ip_address,
             'timezone': tz
         }
-        # Store sentiment analysis in Supabase
         supabase.table('sentiment_analyses').insert(sentiment_data).execute()
         logger.info(f"Stored sentiment analysis in sentiment_analyses: {sentiment_data}")
 
@@ -623,32 +562,21 @@ def analyze_sentiment_gemini():
         logger.exception("Error in sentiment analysis")
         return jsonify({'error': 'Internal server error'}), 500
 
-
-
-
-
-
-
-
-
 # Supabase tables configuration
 # Note: Make sure these tables exist in your Supabase database
+# - users: for user authentication data
+# - articles: for article data
 # - movies: for movie data
 # - user_searches: for storing user search queries
 # - sentiment_analyses: for sentiment analysis results
 # - churn_predictions: for churn prediction results
 # - pricing_analyses: for pricing optimization results
 
-
-
-
 def calculate_dynamic_budget_thresholds():
     """
     Calculate dynamic budget thresholds based on percentiles of budget values.
-    Returns a dictionary with thresholds for 'budget', 'mid-range', and 'premium'.
     """
     try:
-        # Retrieve all non-null, positive budget values from Supabase
         response = supabase.table('movies').select('Budget').not_.is_('Budget', 'null').gt('Budget', 0).execute()
         budgets = [movie['Budget'] for movie in response.data if movie.get('Budget')]
         
@@ -660,12 +588,10 @@ def calculate_dynamic_budget_thresholds():
                 'premium': {'gt': 50_000_000}
             }
 
-        # Calculate 33rd and 66th percentiles
         budgets = sorted(budgets)
         p33, p66 = np.percentile(budgets, [33, 66])
         logger.info(f"Dynamic budget thresholds calculated: p33={p33:.2f}, p66={p66:.2f}")
 
-        # Define dynamic filters for Supabase
         budget_filters = {
             'budget': {'lte': p33},
             'mid-range': {'gt': p33, 'lte': p66},
@@ -689,14 +615,9 @@ budget_filters = calculate_dynamic_budget_thresholds()
 def recommend_movies():
     """
     Handle a POST request to /api/recommend.
-    Expects a JSON object with:
-    - `prompt`: a string describing the movie style or genre to recommend.
-    - `budget`: a string describing the budget category ("budget", "mid-range", "premium").
-    Returns up to 5 movie recommendations based on vector search and budget filter.
     """
     logger.info("Received movie recommendation request")
     try:
-        # Validate JSON request
         if not request.is_json:
             logger.warning("Non-JSON request received")
             return jsonify({'error': 'Request must be JSON'}), 400
@@ -705,7 +626,6 @@ def recommend_movies():
         prompt = data.get('prompt', '').strip()
         budget = data.get('budget', 'budget').lower()
 
-        # Input validation
         if not prompt:
             logger.warning("Empty prompt received")
             return jsonify({'error': 'Prompt is required'}), 400
@@ -717,11 +637,8 @@ def recommend_movies():
             return jsonify({'error': 'Invalid budget category. Use budget, mid-range, or premium'}), 400
 
         sanitized_prompt = html.escape(prompt)
-
-        # Use dynamic budget filters
         price_filter = budget_filters.get(budget, budget_filters['budget'])
 
-        # Generate embedding using Gemini API
         try:
             logger.info(f"Generating embedding for prompt: {sanitized_prompt[:50]}...")
             embedding_response = genai.embed_content(
@@ -735,22 +652,15 @@ def recommend_movies():
             logger.error(f"Error generating embedding: {e}")
             return jsonify({'error': 'Failed to generate embedding'}), 500
 
-        # Supabase query with budget filter
         try:
-            # Build the query based on budget filter
             query = supabase.table('movies').select('title, genres, Budget')
-            
-            # Apply budget filter
             if 'lte' in price_filter:
                 query = query.lte('Budget', price_filter['lte'])
             if 'gt' in price_filter:
                 query = query.gt('Budget', price_filter['gt'])
-            
-            # Limit results and execute
             response = query.limit(10).execute()
             results = response.data
             logger.info(f"Found {len(results)} raw results from Supabase")
-            
         except Exception as e:
             logger.warning(f"Movies table not available: {e}")
             logger.info("Returning mock recommendations")
@@ -762,7 +672,6 @@ def recommend_movies():
                 }
             ]
 
-        # Map budget to price
         def map_budget_to_price(budget_value):
             if not isinstance(budget_value, (int, float)) or budget_value <= 0:
                 return 0
@@ -772,30 +681,24 @@ def recommend_movies():
                 return 50
             return 200
 
-        # Format recommendations
         recommendations = [
             {
                 'name': doc.get('title', 'Unknown Title'),
                 'price': map_budget_to_price(doc.get('Budget', 0)),
                 'genres': doc.get('genres', '').split('|') if doc.get('genres') else [],
-                'score': 85.0  # Default score since we don't have vector search scores
-            } for doc in results[:5]  # Limit to 5 recommendations
+                'score': 85.0
+            } for doc in results[:5]
         ]
-        # Récupérer IP & timezone locale
-        # Récupérer IP & heure locale exacte
         ip_address = get_remote_address()
         tz, local_time = get_local_time_from_ip(ip_address)
-
-        # Store the search in user_searches collection
         search_data = {
             'prompt': sanitized_prompt,
             'budget': budget,
             'timestamp': local_time,
             'recommendations': recommendations,
             'ip_address': ip_address,
-            'timezone': tz 
+            'timezone': tz
         }
-        # Store search in Supabase
         supabase.table('user_searches').insert(search_data).execute()
         logger.info(f"Stored search in user_searches: {search_data}")
 
@@ -810,18 +713,6 @@ def recommend_movies():
         logger.error(f"Error in movie recommendation: {e}", exc_info=True)
         return jsonify({'error': 'Internal server error'}), 500
 
-
-
-
-
-
-
-
-
-
-
-
-# User login (adapt to Supabase)
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
 def login():
@@ -833,19 +724,22 @@ def login():
         if not username or not password:
             flash('Username and password are required.', 'error')
             return redirect(url_for('login'))
-        response = supabase.table('users').select('id, username, password_hash').eq('username', username).eq('is_active', True).execute()
-        user = response.data[0] if response.data else None
-        if user and bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
-            user_obj = User(id=user['id'], username=user['username'])
-            login_user(user_obj)
-            supabase.table('users').update({'last_login': datetime.now(pytz.utc).isoformat()}).eq('id', user['id']).execute()
-            flash('Login successful!', 'success')
-            return redirect(url_for('admin'))
-        else:
-            flash('Invalid username or password.', 'error')
+        try:
+            response = supabase.table('users').select('id, username, password_hash').eq('username', username).eq('is_active', True).execute()
+            user = response.data[0] if response.data else None
+            if user and bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
+                user_obj = User(id=user['id'], username=user['username'])
+                login_user(user_obj)
+                supabase.table('users').update({'last_login': datetime.now(pytz.utc).isoformat()}).eq('id', user['id']).execute()
+                flash('Login successful!', 'success')
+                return redirect(url_for('admin'))
+            else:
+                flash('Invalid username or password.', 'error')
+        except Exception as e:
+            logger.error(f"Error during login: {str(e)}")
+            flash('An error occurred during login.', 'error')
     return render_template('login.html')
 
-# Logout
 @app.route('/logout')
 @login_required
 def logout():
@@ -853,65 +747,32 @@ def logout():
     flash('You have been logged out.', 'success')
     return redirect(url_for('login'))
 
-# Admin route (adapt article fetching to Supabase)
 @app.route('/admin')
 @login_required
 def admin():
-    response = supabase.table('articles').select('*').execute()
-    articles = response.data
-    categories = list(set(article['category'] for article in articles if article['category']))
-    return render_template('admin.html', articles=articles, categories=categories)
+    try:
+        response = supabase.table('articles').select('*').execute()
+        articles = response.data
+        categories = list(set(article['category'] for article in articles if article['category']))
+        return render_template('admin.html', articles=articles, categories=categories)
+    except Exception as e:
+        logger.error(f"Error fetching articles: {str(e)}")
+        flash('Error loading admin page.', 'error')
+        return redirect(url_for('home'))
 
-# SocketIO for view tracking (adapt to Supabase)
 @socketio.on('track_view')
 def handle_track_view(data):
     article_id = data.get('article_id')
     if article_id:
-        supabase.table('articles').update({'views': supabase.table('articles').select('views').eq('uuid', article_id).execute().data[0]['views'] + 1}).eq('uuid', article_id).eq('hidden', False).execute()
-        new_views = supabase.table('articles').select('views').eq('uuid', article_id).execute().data[0]['views']
-        socketio.emit('article_update', {'id': article_id, 'views': new_views})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        try:
+            current_views = supabase.table('articles').select('views').eq('uuid', article_id).eq('hidden', False).execute()
+            if current_views.data:
+                new_views = current_views.data[0]['views'] + 1
+                supabase.table('articles').update({'views': new_views}).eq('uuid', article_id).execute()
+                socketio.emit('article_update', {'id': article_id, 'views': new_views})
+                logger.info(f"Updated views for article {article_id}: {new_views}")
+        except Exception as e:
+            logger.error(f"Error tracking view for article {article_id}: {str(e)}")
 
 # Startup
 if __name__ == '__main__':
