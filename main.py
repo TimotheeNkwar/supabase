@@ -1674,18 +1674,6 @@ def recommend_movies():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 @app.route('/static/<path:filename>')
 def serve_static(filename):
 
