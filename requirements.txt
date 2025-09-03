@@ -36,4 +36,4 @@ genai
 pymongo
 mysql.connector
 asyncio
-
+supabase
