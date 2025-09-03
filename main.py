@@ -865,6 +865,34 @@ def delete_article(article_id):
 
 
 
+# SocketIO handlers
+@socketio.on('track_view')
+def handle_track_view(data):
+    """
+    Handle a 'track_view' event from the client.
+
+    This event is triggered when the user views an article. We update the article's view count in Supabase and
+    emit an 'article_update' event to the client so that the view count can be updated in the UI.
+
+    :param data: A dictionary containing the article ID in the 'article_id' key.
+    :return: None
+    """
+    article_id = data.get('article_id')
+    if article_id:
+        try:
+            # Get current views (by uuid for consistency)
+            response = supabase.table('articles').select('views').eq('uuid', article_id).single().execute()
+            current_views = response.data['views'] if response.data and 'views' in response.data else 0
+            # Increment views
+            supabase.table('articles').update({'views': current_views + 1}).eq('uuid', article_id).execute()
+            # Fetch new views count
+            result = supabase.table('articles').select('views').eq('uuid', article_id).single().execute()
+            new_views = result.data['views'] if result.data and 'views' in result.data else 0
+            socketio.emit('article_update', {'id': article_id, 'views': new_views})
+            logger.info(f"Tracked view for article {article_id}, new views: {new_views}")
+        except Exception as e:
+            logger.error(f"Error tracking view for article {article_id}: {str(e)}")
+
 @api.route('/articles/<article_id>/toggle-visibility', methods=['POST'])
 @limiter.limit("5 per minute")
 @login_required
@@ -881,8 +909,6 @@ def toggle_article_visibility(article_id):
     except Exception as e:
         logger.error(f"Error toggling visibility for article {article_id}: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
-
-
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
 def login():
@@ -1685,39 +1711,6 @@ def serve_static(filename):
 
     logger.info(f"Serving static file: {filename}")
     return send_from_directory(app.static_folder, filename)
-
-
-
-
-
-# SocketIO handlers
-@socketio.on('track_view')
-def handle_track_view(data):
-    """
-    Handle a 'track_view' event from the client.
-
-    This event is triggered when the user views an article. We update the article's view count in Supabase and
-    emit an 'article_update' event to the client so that the view count can be updated in the UI.
-
-    :param data: A dictionary containing the article ID in the 'article_id' key.
-    :return: None
-    """
-    article_id = data.get('article_id')
-    if article_id:
-        try:
-            # Get current views
-            response = supabase.table('articles').select('views').eq('id', article_id).single().execute()
-            current_views = response.data['views'] if response.data and 'views' in response.data else 0
-            # Increment views
-            supabase.table('articles').update({'views': current_views + 1}).eq('id', article_id).execute()
-            # Fetch new views count
-            result = supabase.table('articles').select('views').eq('id', article_id).single().execute()
-            new_views = result.data['views'] if result.data and 'views' in result.data else 0
-            socketio.emit('article_update', {'id': article_id, 'views': new_views})
-            logger.info(f"Tracked view for article {article_id}, new views: {new_views}")
-        except Exception as e:
-            logger.error(f"Error tracking view for article {article_id}: {str(e)}")
-#
 
 
 @socketio.on('connect')
