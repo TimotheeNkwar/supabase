@@ -835,6 +835,7 @@ def track_view(article_id):
         result = supabase.table('articles').select('views, timestamp').eq('uuid', article_id).single().execute()
         new_views = result.data.get('views', 0)
         timestamp = result.data.get('timestamp')
+        logger.info(f"Tracked view for article {article_id}, new views: {new_views}")
         return jsonify({'views': new_views, 'timestamp': timestamp}), 200
     except Exception as e:
         logger.error(f"Error tracking view for article {article_id}: {str(e)}")
