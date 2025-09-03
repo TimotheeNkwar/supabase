@@ -691,25 +691,6 @@ def api_articles():
             conn.close()
 
 
-# --- AFFICHAGE D'UN ARTICLE ---
-@app.route('/article/<id>')
-def show_article(id):
-    try:
-        # Recherche par uuid ou id numérique
-        if id.isdigit():
-            response = supabase.table('articles').select('*').eq('id', int(id)).single().execute()
-        else:
-            response = supabase.table('articles').select('*').eq('uuid', id).single().execute()
-        article = response.data
-        if not article or article.get('hidden'):
-            return render_template('404.html', message="Article not found"), 404
-        article['tags'] = article.get('tags', '').split(',') if article.get('tags') else []
-        # Markdown, bleach, etc. (reprends ta logique existante ici)
-        # ...existing code for markdown/bleach...
-        return render_template('article.html', article=article)
-    except Exception as e:
-        logger.error(f"Error fetching article {id}: {e}")
-        return render_template('404.html', message="Article not found"), 404
 
 # --- API ARTICLES ---
 @app.route('/api/articles', methods=['GET'])
