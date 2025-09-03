@@ -692,36 +692,6 @@ def api_articles():
 
 
 
-# --- API ARTICLES ---
-@app.route('/api/articles', methods=['GET'])
-def api_articles():
-    try:
-        page = int(request.args.get('page', 1))
-        per_page = int(request.args.get('per_page', 5))
-        search = request.args.get('search', '')
-        status = request.args.get('status', 'all')
-        query = supabase.table('articles').select('*')
-        if status != 'all':
-            query = query.eq('hidden', status == 'hidden')
-        if search:
-            query = query.ilike('title', f'%{search}%')
-        start = (page - 1) * per_page
-        end = start + per_page - 1
-        query = query.order('timestamp', desc=True).range(start, end)
-        response = query.execute()
-        articles = response.data or []
-        for article in articles:
-            article['tags'] = article.get('tags', '').split(',') if article.get('tags') else []
-        # Pour le total :
-        total = supabase.table('articles').select('id', count='exact').execute().count or 0
-        return jsonify({
-            'articles': articles,
-            'total': total,
-            'pages': (total + per_page - 1) // per_page
-        })
-    except Exception as e:
-        logger.error(f"Error fetching API articles: {e}")
-        return jsonify({'error': 'Database error'}), 500
 
 # --- CRUD ARTICLES (API) ---
 @api.route('/articles', methods=['POST'])
