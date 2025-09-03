@@ -389,248 +389,6 @@ def load_dataset(dataset_name):
 
 
 
-# Database functions
-def get_db_connection():
-
-    """
-    Establish a connection to JawsDB MySQL or local database.
-
-    Returns a connection object.
-
-    Raises:
-        pymysql.MySQLError: If the connection fails.
-    """
-
-    jawsdb_url = os.getenv('JAWSDB_CHARCOAL_URL')
-    try:
-        if jawsdb_url:
-            url = urlparse(jawsdb_url)
-            config = {
-                'host': url.hostname,
-                'user': url.username,
-                'password': url.password,
-                'database': url.path[1:],
-                'port': url.port or 3306,
-                'charset': 'utf8mb4',
-                'cursorclass': pymysql.cursors.DictCursor,
-                'autocommit': False
-            }
-        else:
-            config = {
-                'host': 'localhost',
-                'user': 'root',
-                'password': os.getenv('LOCAL_MYSQL_PASSWORD', ''),
-                'database': 'datacraft_db',
-                'port': 3306,
-                'charset': 'utf8mb4',
-                'cursorclass': pymysql.cursors.DictCursor,
-                'autocommit': False
-            }
-        conn = pymysql.connect(**config)
-        logger.info("Successfully connected to database")
-        return conn
-    except pymysql.MySQLError as e:
-        logger.error(f"Failed to connect to database: {str(e)}")
-        raise
-
-def init_db():
-
-    """
-    Initialize the database with the required tables and default values.
-
-    Creates the `users` and `articles` tables with the required columns and indexes.
-    Generates UUIDs for existing articles without a UUID.
-    Adds the `updated_at` column to the `articles` table if it doesn't exist.
-    Initializes the default admin user with the environment variables `DEFAULT_ADMIN_USERNAME`, `DEFAULT_ADMIN_PASSWORD`, and `DEFAULT_ADMIN_EMAIL`.
-    Synchronizes the articles metadata.
-
-    Returns:
-        bool: `True` if the initialization was successful, `False` otherwise.
-
-    Raises:
-        ValueError: If the `DEFAULT_ADMIN_PASSWORD` environment variable is not set.
-        pymysql.MySQLError: If a database error occurs during initialization.
-    """
-
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cursor:
-            # Create users table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS users (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    username VARCHAR(50) UNIQUE NOT NULL,
-                    password_hash VARCHAR(255) NOT NULL,
-                    email VARCHAR(255) UNIQUE,
-                    is_active BOOLEAN DEFAULT TRUE,
-                    last_login DATETIME,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    INDEX idx_username (username),
-                    INDEX idx_email (email)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-            ''')
-
-            # Create articles table with uuid and updated_at
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS articles (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    uuid VARCHAR(36) UNIQUE,
-                    title VARCHAR(255) NOT NULL,
-                    content TEXT,
-                    category VARCHAR(50),
-                    description TEXT,
-                    tags VARCHAR(255),
-                    image VARCHAR(255),
-                    read_time INT,
-                    hidden BOOLEAN DEFAULT FALSE,
-                    timestamp DATETIME,
-                    views INT DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    created_by INT,
-                    updated_by INT,
-                    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-                    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-            ''')
-
-            # Ensure uuid column exists
-            cursor.execute("SHOW COLUMNS FROM articles LIKE 'uuid'")
-            if not cursor.fetchone():
-                cursor.execute('ALTER TABLE articles ADD COLUMN uuid VARCHAR(36) UNIQUE')
-                logger.info("Added uuid column to articles table")
-                cursor.execute('SELECT id FROM articles WHERE uuid IS NULL')
-                articles = cursor.fetchall()
-                for article in articles:
-                    article_id = article['id']
-                    new_uuid = str(uuid.uuid4())
-                    cursor.execute('UPDATE articles SET uuid = %s WHERE id = %s', (new_uuid, article_id))
-                logger.info(f"Generated UUIDs for {len(articles)} existing articles")
-
-            # Ensure updated_at column exists
-            cursor.execute("SHOW COLUMNS FROM articles LIKE 'updated_at'")
-            if not cursor.fetchone():
-                cursor.execute('ALTER TABLE articles ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')
-                logger.info("Added updated_at column to articles table")
-
-            # Initialize default admin user
-            cursor.execute("SELECT COUNT(*) AS count FROM users")
-            if cursor.fetchone()['count'] == 0:
-                default_admin = {
-                    'username': os.getenv('DEFAULT_ADMIN_USERNAME', 'admin'),
-                    'password': os.getenv('DEFAULT_ADMIN_PASSWORD')
-                }
-                if not default_admin['password']:
-                    raise ValueError("DEFAULT_ADMIN_PASSWORD environment variable is not set")
-                password_hash = bcrypt.hashpw(
-                    default_admin['password'].encode('utf-8'),
-                    bcrypt.gensalt()
-                ).decode('utf-8')
-                cursor.execute('''
-                    INSERT INTO users (username, password_hash, email, is_active)
-                    VALUES (%s, %s, %s, TRUE)
-                ''', (
-                    default_admin['username'],
-                    password_hash,
-                    os.getenv('DEFAULT_ADMIN_EMAIL', 'timotheenkwar16@gmail.com')
-                ))
-                logger.warning(f"Default admin user created with username: {default_admin['username']}. PLEASE CHANGE THE PASSWORD!")
-
-            conn.commit()
-            logger.info("Database initialization completed successfully.")
-
-            # Sync articles metadata
-            sync_success = sync_articles_metadata()
-            if sync_success:
-                logger.info("Article synchronization completed successfully.")
-            else:
-                logger.error("Article synchronization failed.")
-            return sync_success
-    except pymysql.MySQLError as e:
-        logger.error(f"Database error during initialization: {str(e)}", exc_info=True)
-        conn.rollback()
-        return False
-    finally:
-        conn.close()
-
-
-
-
-
-
-
-def sync_articles_metadata():
-
-    """
-    Sync articles metadata from articles_metadata dictionary with the database.
-
-    Iterate over each article in articles_metadata and insert or update its
-    data in the database. If the article doesn't exist in the database, insert
-    it with default values for views, hidden, and timestamp. If the article does
-    exist in the database, update its fields with the values from the metadata
-    dictionary. If any field is missing from the metadata dictionary, use a
-    default value.
-
-    If any error occurs during the sync process, log the error and close the
-    database connection. If the sync process is successful, log a success
-    message and close the database connection.
-
-    Returns:
-        bool: True if sync is successful, False if an error occurs.
-    """
-
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cursor:
-            for article_uuid, metadata in articles_metadata.items():
-                tags_value = metadata.get('tags', [])
-                if isinstance(tags_value, list):
-                    tags_value = ', '.join(tags_value)
-                cursor.execute('SELECT title, content FROM articles WHERE uuid = %s', (article_uuid,))
-                existing = cursor.fetchone()
-                timestamp = metadata.get('timestamp', datetime.now(pytz.timezone('Asia/Nicosia')))
-                if isinstance(timestamp, str):
-                    try:
-                        timestamp = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-                    except ValueError:
-                        timestamp = datetime.now(pytz.timezone('Asia/Nicosia'))
-                if existing and existing['title'] and existing['content']:
-                    logger.info(f"Article {article_uuid} exists with data, skipping update.")
-                    continue
-                cursor.execute('''
-                               INSERT INTO articles (uuid, title, content, category, description, tags, image,
-                                                     read_time, timestamp, views, created_at, created_by)
-                               ON DUPLICATE KEY UPDATE title       = COALESCE(NULLIF(VALUES(title), ''), title),
-                                                       content     = COALESCE(NULLIF(VALUES(content), ''), content),
-                                                       category    = VALUES(category),
-                                                       description = VALUES(description),
-                                                       tags        = VALUES(tags),
-                                                       image       = VALUES(image),
-                                                       read_time   = VALUES(read_time),
-                                                       timestamp   = VALUES(timestamp)
-                               ''', (
-                                   article_uuid,
-                                   metadata.get('title', 'Untitled Article'),
-                                   metadata.get('content', 'No content available.'),
-                                   metadata.get('category', 'uncategorized'),
-                                   metadata.get('description', 'No description available.'),
-                                   tags_value,
-                                   metadata.get('image',
-                                                'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg'),
-                                   metadata.get('read_time', 1),
-                                   timestamp
-                               ))
-            conn.commit()
-            logger.info("Articles metadata synced successfully.")
-            return True
-    except Exception as e:
-        logger.error(f"Error syncing articles_metadata: {str(e)}")
-        conn.rollback()
-        return False
-    finally:
-        conn.close()
-
 
 
 
@@ -725,88 +483,6 @@ def show_page(page):
 
 
 
-# Load articles from articles_metadata.json
-def load_articles_metadata():
-
-    """
-    Load articles metadata from articles_metadata.json
-    
-    Returns a dictionary containing metadata about each article, where each key is
-    the article ID and each value is another dictionary containing the article's
-    metadata. If the file is invalid or doesn't exist, returns an empty dictionary.
-    """
-
-    try:
-        with open('articles_metadata.json', 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            if not isinstance(data, dict):
-                logger.error("articles_metadata.json must be a dictionary")
-                return {}
-            return data
-    except FileNotFoundError:
-        logger.error("articles_metadata.json not found")
-        return {}
-    except json.JSONDecodeError as e:
-        logger.error(f"Error decoding articles_metadata.json: {e}")
-        return {}
-
-articles_metadata = load_articles_metadata()
-
-# Sync articles_metadata with database
-def sync_articles_to_db():
-
-    """
-    Sync articles from articles_metadata to the database.
-
-    Iterate over each article in articles_metadata and insert or update its
-    data in the database. If the article doesn't exist in the database, insert
-    it with default values for views, hidden, and timestamp. If the article does
-    exist in the database, update its fields with the values from the metadata
-    dictionary. If any field is missing from the metadata dictionary, use a
-    default value.
-
-    If any error occurs during the sync process, log the error and close the
-    database connection. If the sync process is successful, log a success
-    message and close the database connection.
-    """
-
-    conn = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        for article_id, metadata in articles_metadata.items():
-            cursor.execute('''
-                INSERT INTO articles (uuid, title, description, category, tags, image, read_time, content, views, hidden, timestamp)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON DUPLICATE KEY UPDATE
-                    title = VALUES(title),
-                    description = VALUES(description),
-                    category = VALUES(category),
-                    tags = VALUES(tags),
-                    image = VALUES(image),
-                    read_time = VALUES(read_time),
-                    content = VALUES(content),
-                    timestamp = VALUES(timestamp)
-            ''', (
-                article_id,
-                metadata.get('title', 'Untitled Article'),
-                metadata.get('description', 'No description available.'),
-                metadata.get('category', 'Uncategorized'),
-                ','.join(metadata.get('tags', [])),
-                metadata.get('image', 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg'),
-                metadata.get('read_time', 5),
-                metadata.get('content', 'No content available.'),
-                0,
-                False,
-                metadata.get('timestamp', datetime.now(pytz.timezone('Asia/Nicosia')).strftime('%Y-%m-%d %H:%M:%S'))
-            ))
-        conn.commit()
-        logger.info("Synced articles_metadata.json to database")
-    except pymysql.MySQLError as e:
-        logger.error(f"Error syncing articles to database: {e}")
-    finally:
-        if conn:
-            conn.close()
 
 # User class for Flask-Login
 class User(UserMixin):
@@ -814,190 +490,53 @@ class User(UserMixin):
         self.id = id
         self.username = username
 
+
 @login_manager.user_loader
-def load_user(user_id):   
-    """
-    Load a user from the database by ID.
-
-    Called by Flask-Login to load the current user from the database using
-    the user ID stored in the session.
-
-    Args:
-        user_id (int): The ID of the user to load.
-
-    Returns:
-        User: The loaded user object, or None if the user ID doesn't exist in
-            the database.
-    """
-
-    conn = get_db_connection()
+def load_user(user_id):
     try:
-        with conn.cursor() as cursor:
-            cursor.execute('SELECT id, username FROM users WHERE id = %s', (user_id,))
-            user_data = cursor.fetchone()
-            if user_data:
-                return User(id=user_data['id'], username=user_data['username'])
-    finally:
-        conn.close()
+        response = supabase.table('users').select('id, username').eq('id', int(user_id)).single().execute()
+        user_data = response.data
+        if user_data:
+            return User(id=user_data['id'], username=user_data['username'])
+    except Exception as e:
+        logger.error(f"Error loading user {user_id}: {str(e)}")
     return None
 
 @app.route('/article/<id>')
 def show_article(id):
-
-    """
-    Fetch an article from the database by ID and render the article page.
-
-    Args:
-        id (str): The ID of the article to fetch. Can be either a numeric ID or a UUID.
-
-    Returns:
-        A rendered HTML page with the article content.
-    """
-
-    logger.debug(f"Fetching article with ID: {id}")
-    
-    # Normalize ID
-    article_id = id
-    conn = None
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor(pymysql.cursors.DictCursor)
-        
-        # Check if id is numeric (database id)
         if id.isdigit():
-            cursor.execute('SELECT uuid FROM articles WHERE id = %s AND hidden = FALSE', (id,))
-            result = cursor.fetchone()
-            if result and f"article_id_{int(id) - 1}" in articles_metadata:
-                article_id = f"article_id_{int(id) - 1}"  # Map id=1 to article_id_0
-            elif result:
-                article_id = result['uuid']  # Fallback to UUID
-        # Check if id is a UUID
-        elif len(id) == 36 and '-' in id:
-            cursor.execute('SELECT id FROM articles WHERE uuid = %s AND hidden = FALSE', (id,))
-            result = cursor.fetchone()
-            if result and f"article_id_{result['id'] - 1}" in articles_metadata:
-                article_id = f"article_id_{result['id'] - 1}"
-        logger.debug(f"Normalized article ID: {article_id}")
-
-        # Fetch metadata
-        metadata = articles_metadata.get(article_id)
-        if not metadata:
-            logger.warning(f"Article with ID {article_id} not found in articles_metadata.json")
-            return render_template('404.html', message="Article not found"), 404
-
-        # Ensure metadata fields
-        metadata = {
-            'title': metadata.get('title', 'Untitled Article'),
-            'description': metadata.get('description', 'No description available.'),
-            'category': metadata.get('category', 'Uncategorized'),
-            'tags': metadata.get('tags', []) if isinstance(metadata.get('tags', []), list) else [],
-            'image': metadata.get('image', 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg'),
-            'read_time': int(metadata.get('read_time', 5)) if str(metadata.get('read_time', 5)).isdigit() else 5,
-            'timestamp': metadata.get('timestamp', datetime.now(pytz.timezone('Asia/Nicosia'))),
-            'content': metadata.get('content', 'No content available.')
-        }
-
-        # Update or insert in database
-        cursor.execute('SELECT id, views, hidden FROM articles WHERE uuid = %s', (article_id,))
-        article_db = cursor.fetchone()
-        views = 1
-        if article_db:
-            if article_db['hidden']:
-                logger.warning(f"Article with ID {article_id} is hidden in DB")
-                return render_template('404.html', message="Article not found"), 404
-            try:
-                cursor.execute('UPDATE articles SET views = views + 1 WHERE uuid = %s', (article_id,))
-                views = int(article_db['views']) + 1 if article_db.get('views') else 1
-            except pymysql.MySQLError as update_e:
-                logger.error(f"Error updating views for article {article_id}: {update_e}")
-                views = int(article_db['views']) if article_db.get('views') else 1
+            response = supabase.table('articles').select('*').eq('id', int(id)).single().execute()
         else:
-            try:
-                cursor.execute('''
-                    INSERT INTO articles (uuid, title, description, category, tags, image, read_time, content, views, hidden, timestamp)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, FALSE, %s)
-                ''', (
-                    article_id,
-                    metadata['title'],
-                    metadata['description'],
-                    metadata['category'],
-                    ','.join(metadata['tags']),
-                    metadata['image'],
-                    metadata['read_time'],
-                    metadata['content'],
-                    1,
-                    metadata['timestamp'] if isinstance(metadata['timestamp'], str) else metadata['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
-                ))
-                views = 1
-            except pymysql.MySQLError as insert_e:
-                logger.error(f"Error inserting article {article_id} in DB: {insert_e}")
-                views = 1
-        
-        conn.commit()
-    except pymysql.MySQLError as e:
-        logger.error(f"Database error for article {article_id}: {e}")
-        views = 1
-    finally:
-        if conn:
-            try:
-                conn.close()
-            except pymysql.MySQLError:
-                pass
-
-    # Parse timestamp
-    timestamp = metadata.get('timestamp', datetime.now(pytz.timezone('Asia/Nicosia')))
-    if isinstance(timestamp, str):
+            response = supabase.table('articles').select('*').eq('uuid', id).single().execute()
+        article = response.data
+        if not article or article.get('hidden'):
+            return render_template('404.html', message="Article not found"), 404
+        article['tags'] = article.get('tags', '').split(',') if article.get('tags') else []
+        content_md = article.get('content', '')
         try:
-            timestamp = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-        except ValueError:
-            logger.warning(f"Invalid timestamp format for article {article_id}, fallback to now")
-            timestamp = datetime.now(pytz.timezone('Asia/Nicosia'))
-    formatted_timestamp = timestamp.astimezone(pytz.timezone('Asia/Nicosia')).strftime("%B %d, %Y %H:%M:%S")
-
-    # Convert markdown to HTML
-    content_md = metadata.get('content', 'No content available.')
-    try:
-        content_html = markdown2.markdown(
-            content_md,
-            extras=["fenced-code-blocks", "tables", "strike", "footnotes", "code-friendly"]
-        )
-    except Exception as md_e:
-        logger.error(f"Markdown conversion error for article {article_id}: {md_e}")
-        content_html = '<p>No content available.</p>'
-
-    # Sanitize HTML
-    allowed_tags = [
-        'p', 'pre', 'code', 'img', 'h1', 'h2', 'h3', 'table', 'thead',
-        'tbody', 'tr', 'th', 'td', 'div', 'span', 'a', 'b', 'i', 'u',
-        'strong', 'em', 'ul', 'ol', 'li', 'br'
-    ]
-    allowed_attrs = {
-        'a': ['href', 'title', 'target', 'rel'],
-        'img': ['src', 'alt', 'title', 'width', 'height'],
-        'div': ['class'],
-        'span': ['class']
-    }
-    try:
-        content_html = bleach.clean(content_html, tags=allowed_tags, attributes=allowed_attrs)
-    except Exception as bleach_e:
-        logger.error(f"Bleach sanitization error for article {article_id}: {bleach_e}")
-        content_html = '<p>No content available.</p>'
-
-    # Build article object
-    article = {
-        'id': str(article_id),
-        'title': metadata['title'],
-        'description': metadata['description'],
-        'category': metadata['category'],
-        'tags': metadata['tags'],
-        'image': metadata['image'],
-        'read_time': metadata['read_time'],
-        'timestamp': formatted_timestamp,
-        'views': views,
-        'content': content_html
-    }
-
-    return render_template('article.html', article=article)
+            content_html = markdown2.markdown(content_md, extras=["fenced-code-blocks", "tables", "strike", "footnotes", "code-friendly"])
+        except Exception:
+            content_html = '<p>No content available.</p>'
+        allowed_tags = [
+            'p', 'pre', 'code', 'img', 'h1', 'h2', 'h3', 'table', 'thead',
+            'tbody', 'tr', 'th', 'td', 'div', 'span', 'a', 'b', 'i', 'u',
+            'strong', 'em', 'ul', 'ol', 'li', 'br'
+        ]
+        allowed_attrs = {
+            'a': ['href', 'title', 'target', 'rel'],
+            'img': ['src', 'alt', 'title', 'width', 'height'],
+            'div': ['class'],
+            'span': ['class']
+        }
+        try:
+            article['content'] = bleach.clean(content_html, tags=allowed_tags, attributes=allowed_attrs)
+        except Exception:
+            article['content'] = '<p>No content available.</p>'
+        return render_template('article.html', article=article)
+    except Exception as e:
+        logger.error(f"Error fetching article {id}: {e}")
+        return render_template('404.html', message="Article not found"), 404
 
 @app.route('/')
 def index():
@@ -1393,59 +932,6 @@ app.register_blueprint(api, url_prefix='/api')
 
 if __name__ == '__main__':
     try:
-        def init_db():            
-
-            """
-            Initialize the database tables if they don't exist.
-
-            This function will create two tables, 'articles' and 'users', if they don't already exist in the
-            database. The 'articles' table stores the article data while the 'users' table stores the user data.
-
-            :return: None
-            """
-
-            conn = get_db_connection()
-            try:
-                with conn.cursor() as cursor:
-                    cursor.execute('''
-                        CREATE TABLE IF NOT EXISTS articles (
-                            id INT AUTO_INCREMENT PRIMARY KEY,
-                            uuid VARCHAR(255) UNIQUE NOT NULL,
-                            title TEXT NOT NULL,
-                            description TEXT,
-                            category VARCHAR(100),
-                            tags TEXT,
-                            image TEXT,
-                            read_time INT,
-                            content TEXT,
-                            views INT DEFAULT 0,,
-                            created_by INT,
-                            updated_by INT,
-                            hidden BOOLEAN DEFAULT FALSE,
-                            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                            
-                        )
-                    ''')
-                    cursor.execute('''
-                        CREATE TABLE IF NOT EXISTS users (
-                            id INT AUTO_INCREMENT PRIMARY KEY,
-                            username VARCHAR(255) UNIQUE NOT NULL,
-                            password_hash VARCHAR(255) NOT NULL,
-                            is_active BOOLEAN DEFAULT TRUE,
-                            last_login DATETIME,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-                            
-                            
-                        )
-                    ''')
-                    conn.commit()
-            finally:
-                conn.close()
-        init_db()
-        sync_articles_to_db()
         socketio.run(
             app,
             debug=os.getenv('FLASK_DEBUG', 'true').lower() == 'true',
