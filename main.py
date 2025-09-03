@@ -691,21 +691,7 @@ def api_articles():
             conn.close()
 
 # --- ARTICLES POUR LE BLOG ---
-@app.route('/blog')
-def blog():
-    try:
-        response = supabase.table('articles').select('*').eq('hidden', False).order('timestamp', desc=True).execute()
-        articles = response.data or []
-        for article in articles:
-            article['tags'] = article.get('tags', '').split(',') if article.get('tags') else []
-            if isinstance(article.get('timestamp'), str):
-                article['timestamp'] = article['timestamp']
-            elif article.get('timestamp'):
-                article['timestamp'] = str(article['timestamp'])
-        return render_template('blog_insights.html', articles=articles)
-    except Exception as e:
-        logger.error(f"Error fetching blog articles: {e}")
-        return render_template('blog_insights.html', articles=[])
+
 
 # --- PAGE D'ACCUEIL ---
 @app.route('/')
