@@ -77,10 +77,14 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 
-# 1. Ajoute l'import du client Supabase et configure-le
+
+# Initialize Supabase with service role key
 SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY')
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')  # Clé de service
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
+
+
 
 @app.route("/robots.txt")
 def robots():
