@@ -888,6 +888,26 @@ def delete_article(article_id):
 
 
 
+@api.route('/articles/<article_id>/toggle-visibility', methods=['POST'])
+@limiter.limit("5 per minute")
+@login_required
+def toggle_article_visibility(article_id):
+    try:
+        data = request.get_json()
+        hidden = data.get('hidden', False)
+        # --- SUPABASE IMPLEMENTATION ---
+        result = supabase.table('articles').update({'hidden': hidden}).eq('uuid', article_id).execute()
+        if not result.data:
+            return jsonify({'error': 'Article not found'}), 404
+        socketio.emit('article_visibility_changed', {'articleId': article_id, 'hidden': hidden})
+        return jsonify({'message': 'Visibility toggled'}), 200
+    except Exception as e:
+        logger.error(f"Error toggling visibility for article {article_id}: {str(e)}")
+        return jsonify({'error': 'Internal server error'}),
+
+
+
+
 
 
 
