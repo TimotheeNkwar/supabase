@@ -1689,23 +1689,26 @@ def serve_static(filename):
 @socketio.on('track_view')
 def handle_track_view(data):
     article_id = data.get('article_id')
-    if article_id:
-        try:
-            # Essayer avec uuid
-            response = supabase.table('articles').select('views').eq('uuid', article_id).single().execute()
-            if not response.data:
-                # Essayer avec id (si article_id est un entier)
-                if article_id.isdigit():
-                    response = supabase.table('articles').select('views').eq('id', int(article_id)).single().execute()
-            current_views = response.data['views'] if response.data and 'views' in response.data else 0
-            supabase.table('articles').update({'views': current_views + 1}).eq('uuid', article_id).execute()
-            result = supabase.table('articles').select('views').eq('uuid', article_id).single().execute()
-            new_views = result.data['views'] if result.data and 'views' in result.data else 0
-            socketio.emit('article_update', {'id': article_id, 'views': new_views})
-            logger.info(f"Tracked view for article {article_id}, new views: {new_views}")
-        except Exception as e:
-            logger.error(f"Error tracking view for article {article_id}: {str(e)}")
-
+    if not article_id:
+        logger.error("No article_id provided in track_view event")
+        return
+    try:
+        logger.info(f"Processing track_view for article_id: {article_id}")
+        response = supabase.table('articles').select('views, timestamp').eq('uuid', article_id).single().execute()
+        if not response.data and article_id.isdigit():
+            response = supabase.table('articles').select('views, timestamp').eq('id', int(article_id)).single().execute()
+        if not response.data:
+            logger.error(f"Article not found for id: {article_id}")
+            return
+        current_views = response.data.get('views', 0)
+        supabase.table('articles').update({'views': current_views + 1}).eq('uuid', article_id).execute()
+        result = supabase.table('articles').select('views, timestamp').eq('uuid', article_id).single().execute()
+        new_views = result.data.get('views', 0)
+        timestamp = result.data.get('timestamp')
+        socketio.emit('article_update', {'id': article_id, 'views': new_views, 'timestamp': timestamp})
+        logger.info(f"Tracked view for article {article_id}, new views: {new_views}, timestamp: {timestamp}")
+    except Exception as e:
+        logger.error(f"Error tracking view for article {article_id}: {str(e)}", exc_info=True)
 
 
 
