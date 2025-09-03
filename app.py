@@ -858,7 +858,7 @@ def update_article(article_id):
 @login_required
 def delete_article(article_id):
     try:
-        result = supabase.table('articles').delete().eq('uuid', article_id).execute()
+        result = supabase.table('articles').delete().eq('id', article_id).execute()
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
         socketio.emit('article_deleted', {'articleId': article_id})
