@@ -1704,37 +1704,36 @@ def serve_static(filename):
 
 
 
+
+
 # SocketIO handlers
 @socketio.on('track_view')
 def handle_track_view(data):
-
     """
     Handle a 'track_view' event from the client.
 
-    This event is triggered when the user views an article. We update the article's view count in the database and
+    This event is triggered when the user views an article. We update the article's view count in Supabase and
     emit an 'article_update' event to the client so that the view count can be updated in the UI.
 
     :param data: A dictionary containing the article ID in the 'article_id' key.
     :return: None
     """
-
     article_id = data.get('article_id')
     if article_id:
         try:
-            conn = get_db_connection()
-            with conn.cursor() as cursor:
-                cursor.execute('UPDATE articles SET views = views + 1 WHERE uuid = %s AND hidden = FALSE',
-                               (article_id,))
-                conn.commit()
-                cursor.execute('SELECT views FROM articles WHERE uuid = %s', (article_id,))
-                result = cursor.fetchone()
-                new_views = result['views'] if result else 0
-                socketio.emit('article_update', {'id': article_id, 'views': new_views})
-                logger.info(f"Tracked view for article {article_id}, new views: {new_views}")
+            # Get current views
+            response = supabase.table('articles').select('views').eq('uuid', article_id).single().execute()
+            current_views = response.data['views'] if response.data and 'views' in response.data else 0
+            # Increment views
+            supabase.table('articles').update({'views': current_views + 1}).eq('uuid', article_id).execute()
+            # Fetch new views count
+            result = supabase.table('articles').select('views').eq('uuid', article_id).single().execute()
+            new_views = result.data['views'] if result.data and 'views' in result.data else 0
+            socketio.emit('article_update', {'id': article_id, 'views': new_views})
+            logger.info(f"Tracked view for article {article_id}, new views: {new_views}")
         except Exception as e:
             logger.error(f"Error tracking view for article {article_id}: {str(e)}")
-        finally:
-            conn.close()
+#
 
 
 @socketio.on('connect')
