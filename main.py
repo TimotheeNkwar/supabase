@@ -690,25 +690,6 @@ def api_articles():
         if conn:
             conn.close()
 
-# --- ARTICLES POUR LE BLOG ---
-
-
-# --- PAGE D'ACCUEIL ---
-@app.route('/')
-def index():
-    try:
-        response = supabase.table('articles').select('*').eq('hidden', False).order('timestamp', desc=True).limit(3).execute()
-        articles = response.data or []
-        for article in articles:
-            article['tags'] = article.get('tags', '').split(',') if article.get('tags') else []
-            if isinstance(article.get('timestamp'), str):
-                article['timestamp'] = article['timestamp']
-            elif article.get('timestamp'):
-                article['timestamp'] = str(article['timestamp'])
-        return render_template('index.html', articles=articles)
-    except Exception as e:
-        logger.error(f"Error fetching articles: {e}")
-        return render_template('index.html', articles=[])
 
 # --- AFFICHAGE D'UN ARTICLE ---
 @app.route('/article/<id>')
