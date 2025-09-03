@@ -19,6 +19,7 @@ CREATE TABLE articles (
     image TEXT,
     read_time INT,
     views INT DEFAULT 0,
+    clicks INT DEFAULT 0,
     created_by INTEGER REFERENCES users(id),
     updated_by INTEGER REFERENCES users(id),
     hidden BOOLEAN DEFAULT FALSE,
