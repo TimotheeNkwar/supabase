@@ -1677,6 +1677,15 @@ def track_view(article_id):
             return jsonify({'error': 'Article not found'}), 404
         current_views = response.data.get('views', 0)
         supabase.table('articles').update({'views': current_views + 1}).eq('uuid', article_id).execute()
+        try:
+            # Broadcast via Socket.IO as a fallback for clients
+            socketio.emit('article_update', {
+                'id': article_id,
+                'views': current_views + 1,
+                'timestamp': response.data.get('timestamp')
+            })
+        except Exception:
+            logger.debug('Socket.IO emit failed for article_update', exc_info=True)
         return jsonify({'views': current_views + 1}), 200
     except Exception as e:
         logger.exception(f"Error tracking view for article {article_id}: {str(e)}")

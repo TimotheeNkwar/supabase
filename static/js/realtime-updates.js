@@ -51,6 +51,35 @@ supabaseClient && supabaseClient
   )
   .subscribe();
 
+// Fallback Socket.IO listener if Supabase Realtime doesn't fire
+try {
+  if (window.io) {
+    const socket = window.io();
+    socket.on('article_update', (data) => {
+      if (!data || !data.id) return;
+      const articleId = data.id;
+      const views = data.views;
+      const viewCountElement = document.querySelector(`.view-count[data-article-id="${articleId}"] .view-count-text`);
+      if (viewCountElement && typeof views !== 'undefined') {
+        viewCountElement.textContent = formatViews(views);
+      }
+
+      const tsElement = document.querySelector(`.timestamp[data-article-id="${articleId}"] .timestamp-text`);
+      if (tsElement && data.timestamp) {
+        const date = new Date(String(data.timestamp).replace('Z', '+00:00'));
+        const formatted = date.toLocaleString('en-US', {
+          year: 'numeric', month: 'long', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+          hour12: false, timeZone: 'Asia/Nicosia'
+        });
+        tsElement.textContent = formatted;
+      }
+    });
+  }
+} catch (e) {
+  console.debug('[Realtime] Socket.IO fallback not available', e);
+}
+
 // Formate le nombre de vues (ex: 1000 -> "1K views")
 function formatViews(views) {
   if (views >= 1000) {
