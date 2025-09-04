@@ -1669,38 +1669,19 @@ def recommend_movies():
 @limiter.limit("10 per minute")
 def track_view(article_id):
     """
-    Incrémente le nombre de vues d'un article et émet un événement Socket.IO pour la mise à jour en temps réel.
+    Incrémente le nombre de vues d'un article.
     """
     try:
         response = supabase.table('articles').select('views, timestamp').eq('id', article_id).single().execute()
         if not response.data:
             return jsonify({'error': 'Article not found'}), 404
         current_views = response.data.get('views', 0)
-        timestamp = response.data.get('timestamp')
         supabase.table('articles').update({'views': current_views + 1}).eq('id', article_id).execute()
-        # Récupère les nouvelles valeurs pour l'emit
-        result = supabase.table('articles').select('views, timestamp').eq('id', article_id).single().execute()
-        new_views = result.data.get('views', 0)
-        new_timestamp = result.data.get('timestamp')
-        socketio.emit('article_update', {
-            'id': article_id,
-            'views': new_views,
-            'timestamp': new_timestamp
-        })
-        logger.info(f"Tracked view for article {article_id}, new views: {new_views}")
-        return jsonify({'views': new_views, 'timestamp': new_timestamp}), 200
+        return jsonify({'views': current_views + 1}), 200
     except Exception as e:
         logger.exception(f"Error tracking view for article {article_id}: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
-
-@socketio.on('connect')
-def handle_connect():
-    logger.info('Client connected')
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    logger.info('Client disconnected')
 
 # Custom rate limit exceeded response
 @limiter.request_filter
