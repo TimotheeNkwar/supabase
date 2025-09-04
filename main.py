@@ -39,6 +39,8 @@ from flask import Response
 from datetime import timezone
 import requests
 from supabase import create_client, Client
+import smtplib
+from email.message import EmailMessage
 
 
 # Configure logging
@@ -81,6 +83,30 @@ login_manager.login_view = 'login'
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')  # Clé de service
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+# --- Email helper ---
+def send_email(to_email: str, subject: str, body: str) -> bool:
+    try:
+        host = os.getenv('EMAIL_HOST')
+        port = int(os.getenv('EMAIL_PORT', '587'))
+        user = os.getenv('EMAIL_USER')
+        password = os.getenv('EMAIL_PASS')
+        from_email = os.getenv('EMAIL_FROM', user)
+        if not all([host, port, user, password, from_email]):
+            logger.warning('Email not sent: SMTP env vars not fully configured')
+            return False
+        msg = EmailMessage()
+        msg['Subject'] = subject
+        msg['From'] = from_email
+        msg['To'] = to_email
+        msg.set_content(body)
+        with smtplib.SMTP(host, port) as server:
+            server.starttls()
+            server.login(user, password)
+            server.send_message(msg)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send email to {to_email}: {e}")
+        return False
 
 
 
@@ -373,8 +399,13 @@ def request_password_reset():
             # explicit 5-min expiry to match validation below
             'expires_at': (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()
         }).execute()
-        # TODO: send email via your provider; for now, log
-        logger.info(f"Password reset code for {email}: {code}")
+        # Send email with the code
+        send_email(
+            to_email=email,
+            subject='Your password reset code',
+            body=f'Your password reset code is: {code}\nThis code expires in 5 minutes.'
+        )
+        logger.info(f"Password reset code generated for {email}")
         return jsonify({'message': 'If the account exists, a code was sent.'}), 200
     except Exception as e:
         logger.error(f"request_password_reset error: {e}")
