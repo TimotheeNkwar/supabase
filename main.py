@@ -33,12 +33,11 @@ from sklearn.preprocessing import StandardScaler
 import google.generativeai as genai
 from urllib.parse import urlparse
 import pymysql
-from google.generativeai import configure as genai_configure, embed_content, GenerativeModel
+from google.generativeai import GenerativeModel
 import random
-from flask import Flask, Response
-from datetime import datetime, timezone
+from flask import Response
+from datetime import timezone
 import requests
-from zoneinfo import ZoneInfo
 from supabase import create_client, Client
 
 
@@ -172,18 +171,7 @@ def get_client_ip(request):
         ip = request.remote_addr or "127.0.0.1"
     return ip
 
-def datetimeformat(value, format='%d/%m/%Y %H:%M'):
-    if value is None:
-        return ''
-    if isinstance(value, str):
-        try:
-            if 'T' in value:
-                value = datetime.fromisoformat(value.replace('Z', '+00:00'))
-            else:
-                value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-        except (ValueError, TypeError):
-            return value
-    return value.strftime(format)
+ 
 
 def format_views(views):
     if views >= 1000:
