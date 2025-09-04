@@ -215,6 +215,13 @@ def format_views(views):
 
 
 
+# --- Identifier helpers ---
+def is_valid_uuid(value: str) -> bool:
+    try:
+        return str(uuid.UUID(str(value))) == str(value)
+    except Exception:
+        return False
+
 def get_local_time_from_ip(ip):
 
     """
@@ -978,10 +985,13 @@ def update_article(article_id):
             except Exception:
                 pass
 
-        # Update by uuid first, fallback to numeric id
-        result = supabase.table('articles').update(updates).eq('uuid', article_id).execute()
-        if not result.data and str(article_id).isdigit():
+        # Update selecting by numeric id first when applicable, else by valid uuid
+        if str(article_id).isdigit():
             result = supabase.table('articles').update(updates).eq('id', int(article_id)).execute()
+        elif is_valid_uuid(article_id):
+            result = supabase.table('articles').update(updates).eq('uuid', article_id).execute()
+        else:
+            return jsonify({'error': 'Invalid article identifier'}), 400
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
         updated = (result.data or [{}])[0]
@@ -998,11 +1008,12 @@ def update_article(article_id):
 @login_required
 def delete_article(article_id):
     try:
-        # Try delete by uuid first
-        result = supabase.table('articles').delete().eq('uuid', article_id).execute()
-        # Fallback: if numeric, try by integer id
-        if not result.data and str(article_id).isdigit():
+        if str(article_id).isdigit():
             result = supabase.table('articles').delete().eq('id', int(article_id)).execute()
+        elif is_valid_uuid(article_id):
+            result = supabase.table('articles').delete().eq('uuid', article_id).execute()
+        else:
+            return jsonify({'error': 'Invalid article identifier'}), 400
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
         socketio.emit('article_deleted', {'articleId': article_id, 'uuid': article_id})
@@ -1020,10 +1031,12 @@ def toggle_article_visibility(article_id):
     try:
         data = request.get_json(silent=True) or {}
         hidden = data.get('hidden', False)
-        # Update by uuid, fallback to numeric id
-        result = supabase.table('articles').update({'hidden': hidden}).eq('uuid', article_id).execute()
-        if not result.data and str(article_id).isdigit():
+        if str(article_id).isdigit():
             result = supabase.table('articles').update({'hidden': hidden}).eq('id', int(article_id)).execute()
+        elif is_valid_uuid(article_id):
+            result = supabase.table('articles').update({'hidden': hidden}).eq('uuid', article_id).execute()
+        else:
+            return jsonify({'error': 'Invalid article identifier'}), 400
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
 
