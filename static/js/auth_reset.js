@@ -51,6 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const resetForm = document.getElementById('reset-form');
   const resetMsg = document.getElementById('reset-msg');
   const step2Section = resetForm ? resetForm.closest('section') : null;
+  const verifyBlock = document.getElementById('verify-block');
+  const verifyBtn = document.getElementById('verify-btn');
+  const verifyMsg = document.getElementById('verify-msg');
+  const codeStep1 = document.getElementById('code_step1');
 
   // Hide Step 2 by default; reveal only after verification
   if (step2Section) step2Section.style.display = 'none';
@@ -66,18 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
         requestMsg.textContent = err.message || 'Erreur réseau';
         return;
       }
-      // Ask user to input code to verify before proceeding to step 2
-      const codePrompt = window.prompt('Enter the 6-digit code you received by email:');
-      if (!codePrompt) return;
-      try {
-        await verifyResetCode(emailInput.value, codePrompt);
-        // Persist email so step 2 uses the same value
-        try { sessionStorage.setItem('resetEmail', String(emailInput.value).trim().toLowerCase()); } catch (_) {}
-        if (step2Section) step2Section.style.display = '';
-        requestMsg.textContent = 'Code validé. Vous pouvez définir un nouveau mot de passe.';
-      } catch (err) {
-        requestMsg.textContent = err.message || 'Code invalide ou expiré';
-      }
+      // Show inline verification block
+      if (verifyBlock) verifyBlock.style.display = '';
     });
   }
 
@@ -93,6 +87,20 @@ document.addEventListener('DOMContentLoaded', () => {
         resetMsg.textContent = data.message || 'Mot de passe mis à jour';
       } catch (err) {
         resetMsg.textContent = err.message || 'Erreur réseau';
+      }
+    });
+  }
+
+  if (verifyBtn && codeStep1 && verifyMsg) {
+    verifyBtn.addEventListener('click', async () => {
+      verifyMsg.textContent = '';
+      try {
+        await verifyResetCode(emailInput.value, codeStep1.value);
+        try { sessionStorage.setItem('resetEmail', String(emailInput.value).trim().toLowerCase()); } catch (_) {}
+        if (step2Section) step2Section.style.display = '';
+        verifyMsg.textContent = 'Code validé. Vous pouvez définir un nouveau mot de passe.';
+      } catch (err) {
+        verifyMsg.textContent = err.message || 'Code invalide ou expiré';
       }
     });
   }
