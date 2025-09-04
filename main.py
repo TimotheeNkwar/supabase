@@ -810,7 +810,7 @@ def update_article(article_id):
         }).eq('uuid', article_id).execute()
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
-        socketio.emit('article_updated', {'article': {'id': article_id}})
+        socketio.emit('article_updated', {'article': {'id': article_id, 'uuid': article_id}})
         return jsonify({'article': {'id': article_id}}), 200
     except Exception as e:
         logger.error(f"Error updating article {article_id}: {str(e)}")
@@ -823,10 +823,14 @@ def update_article(article_id):
 @login_required
 def delete_article(article_id):
     try:
-        result = supabase.table('articles').delete().eq('id', article_id).execute()
+        # Try delete by uuid first
+        result = supabase.table('articles').delete().eq('uuid', article_id).execute()
+        # Fallback: if numeric, try by integer id
+        if not result.data and str(article_id).isdigit():
+            result = supabase.table('articles').delete().eq('id', int(article_id)).execute()
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
-        socketio.emit('article_deleted', {'articleId': article_id})
+        socketio.emit('article_deleted', {'articleId': article_id, 'uuid': article_id})
         return jsonify({'message': 'Article deleted'}), 200
     except Exception as e:
         logger.error(f"Error deleting article {article_id}: {str(e)}")
@@ -841,14 +845,14 @@ def toggle_article_visibility(article_id):
     try:
         data = request.get_json(silent=True) or {}
         hidden = data.get('hidden', False)
-
-        # Vérifie si colonne est "id" ou "uuid"
-        result = supabase.table('articles').update({'hidden': hidden}).eq('id', article_id).execute()
-
+        # Update by uuid, fallback to numeric id
+        result = supabase.table('articles').update({'hidden': hidden}).eq('uuid', article_id).execute()
+        if not result.data and str(article_id).isdigit():
+            result = supabase.table('articles').update({'hidden': hidden}).eq('id', int(article_id)).execute()
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
 
-        socketio.emit('article_visibility_changed', {'articleId': article_id, 'hidden': hidden})
+        socketio.emit('article_visibility_changed', {'articleId': article_id, 'uuid': article_id, 'hidden': hidden})
         return jsonify({'message': 'Visibility toggled'}), 200
     except Exception as e:
         logger.error(f"Error toggling visibility for article {article_id}: {str(e)}")
