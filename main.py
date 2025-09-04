@@ -1023,7 +1023,6 @@ def delete_article(article_id):
         return jsonify({'error': 'Internal server error'}), 500
 
 
-
 @api.route('/articles/<article_id>/toggle-visibility', methods=['POST'])
 @limiter.limit("5 per minute")
 @login_required
