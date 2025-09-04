@@ -633,7 +633,7 @@ def show_article(id):
         }
 
         # Update or insert in Supabase
-        response = supabase.table('articles').select('id, views, hidden').eq('uuid', article_id).execute()
+        response = supabase.table('articles').select('id, views, hidden').eq('id', article_id).execute()
         article_db = response.data[0] if response.data else None
         views = 1
         if article_db:
@@ -642,7 +642,7 @@ def show_article(id):
                 return render_template('404.html', message="Article not found"), 404
             try:
                 updated_views = int(article_db['views']) + 1 if article_db.get('views') else 1
-                supabase.table('articles').update({'views': updated_views}).eq('uuid', article_id).execute()
+                supabase.table('articles').update({'views': updated_views}).eq('id', article_id).execute()
                 views = updated_views
             except Exception as update_e:
                 logger.error(f"Error updating views for article {article_id}: {update_e}")
@@ -650,7 +650,7 @@ def show_article(id):
         else:
             try:
                 supabase.table('articles').insert({
-                    'uuid': article_id,
+                    'id': article_id,
                     'title': metadata['title'],
                     'description': metadata['description'],
                     'category': metadata['category'],
