@@ -357,8 +357,9 @@ def request_password_reset():
         if not email:
             return jsonify({'error': 'Email is required'}), 400
         # Find user
-        resp = supabase.table('users').select('id, username').eq('username', email).single().execute()
-        user = resp.data
+        resp = supabase.table('users').select('id, username').eq('username', email).limit(1).execute()
+        rows = resp.data or []
+        user = rows[0] if rows else None
         if not user:
             # Do not leak existence
             return jsonify({'message': 'If the account exists, a code was sent.'}), 200
@@ -369,7 +370,8 @@ def request_password_reset():
             'user_id': user['id'],
             'email': email,
             'code': code,
-            'expires_at': datetime.now(timezone.utc).isoformat()
+            # explicit 5-min expiry to match validation below
+            'expires_at': (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()
         }).execute()
         # TODO: send email via your provider; for now, log
         logger.info(f"Password reset code for {email}: {code}")
@@ -400,7 +402,7 @@ def reset_password_with_code():
             expires_at = datetime.fromisoformat(str(entry.get('expires_at')).replace('Z', '+00:00'))
         except Exception:
             expires_at = datetime.now(timezone.utc)
-        if datetime.now(timezone.utc) > expires_at + timedelta(minutes=5):
+        if datetime.now(timezone.utc) > expires_at:
             return jsonify({'error': 'Code expired'}), 400
         # Update password
         salt = bcrypt.gensalt()
