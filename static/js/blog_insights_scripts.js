@@ -61,10 +61,12 @@ document.addEventListener('DOMContentLoaded', () => {
                    (filter === 'all' || category === filter);
         });
 
-        // Sort posts
+        // Sort posts using ISO from data-initial for reliability
         filteredPosts.sort((a, b) => {
-            const aTimestamp = new Date(a.querySelector('.timestamp-text').textContent);
-            const bTimestamp = new Date(b.querySelector('.timestamp-text').textContent);
+            const aIso = a.querySelector('.timestamp-text')?.getAttribute('data-initial') || '';
+            const bIso = b.querySelector('.timestamp-text')?.getAttribute('data-initial') || '';
+            const aTimestamp = new Date(aIso);
+            const bTimestamp = new Date(bIso);
             const aViews = parseInt(a.querySelector('.view-count-text').textContent.replace(/[^0-9]/g, '')) || 0;
             const bViews = parseInt(b.querySelector('.view-count-text').textContent.replace(/[^0-9]/g, '')) || 0;
             const now = new Date('2025-08-02T16:37:00+03:00');
