@@ -41,6 +41,7 @@ import requests
 from supabase import create_client, Client
 import smtplib
 from email.message import EmailMessage
+import re
 
 
 # Configure logging
@@ -388,6 +389,9 @@ def request_password_reset():
         email = (data.get('email') or '').strip().lower()
         if not email:
             return jsonify({'error': 'Email is required'}), 400
+        # Basic email format check to avoid obvious bad inputs
+        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+            return jsonify({'message': 'If the account exists, a code was sent.'}), 200
         # Find user
         resp = supabase.table('users').select('id, username').eq('username', email).limit(1).execute()
         rows = resp.data or []
@@ -429,6 +433,8 @@ def verify_password_reset_code():
         code = (data.get('code') or '').strip()
         if not email or not code:
             return jsonify({'error': 'Email and code are required'}), 400
+        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+            return jsonify({'error': 'Invalid email'}), 400
         res = supabase.table('password_resets').select('id, email, code, expires_at, used').eq('email', email).eq('code', code).eq('used', False).order('created_at', desc=True).limit(1).execute()
         entry = (res.data or [None])[0]
         if not entry:
