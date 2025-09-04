@@ -581,150 +581,98 @@ def show_page(page):
 
 
 
-
 @app.route('/article/<id>')
 def show_article(id):
-    """
-    Fetch an article from the Supabase database by ID and render the article page.
-
-    Args:
-        id (str): The ID of the article to fetch. Can be either a numeric ID or a UUID.
-
-    Returns:
-        A rendered HTML page with the article content.
-    """
-    logger.debug(f"Fetching article with ID: {id}")
-    
-    # Normalize ID
-    article_id = id
     try:
-        # Check if id is numeric (database id)
+        # Validate ID format
         if id.isdigit():
-            response = supabase.table('articles').select('uuid').eq('id', id).eq('hidden', False).execute()
-            result = response.data[0] if response.data else None
-            if result and f"article_id_{int(id) - 1}" in articles_metadata:
-                article_id = f"article_id_{int(id) - 1}"  # Map id=1 to article_id_0
-            elif result:
-                article_id = result['uuid']  # Fallback to UUID
-        # Check if id is a UUID
-        elif len(id) == 36 and '-' in id:
-            response = supabase.table('articles').select('id').eq('uuid', id).eq('hidden', False).execute()
-            result = response.data[0] if response.data else None
-            if result and f"article_id_{result['id'] - 1}" in articles_metadata:
-                article_id = f"article_id_{result['id'] - 1}"
-        logger.debug(f"Normalized article ID: {article_id}")
+            article_id = int(id)
+            response = supabase.table('articles').select('*').eq('id', article_id).single().execute()
+        else:
+            # Validate UUID format
+            try:
+                uuid.UUID(id)
+                response = supabase.table('articles').select('*').eq('uuid', id).single().execute()
+            except ValueError:
+                logger.warning(f"Invalid UUID format for article ID: {id}")
+                return render_template('404.html', message="Article not found"), 404
 
-        # Fetch metadata
-        metadata = articles_metadata.get(article_id)
-        if not metadata:
-            logger.warning(f"Article with ID {article_id} not found in articles_metadata.json")
+        article = response.data
+        if not article or article.get('hidden'):
+            logger.warning(f"Article with ID {id} not found or hidden")
             return render_template('404.html', message="Article not found"), 404
 
-        # Ensure metadata fields
-        metadata = {
-            'title': metadata.get('title', 'Untitled Article'),
-            'description': metadata.get('description', 'No description available.'),
-            'category': metadata.get('category', 'Uncategorized'),
-            'tags': metadata.get('tags', []) if isinstance(metadata.get('tags', []), list) else [],
-            'image': metadata.get('image', 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg'),
-            'read_time': int(metadata.get('read_time', 5)) if str(metadata.get('read_time', 5)).isdigit() else 5,
-            'timestamp': metadata.get('timestamp', datetime.now(pytz.timezone('Asia/Nicosia'))),
-            'content': metadata.get('content', 'No content available.')
+        # Check articles_metadata for consistency
+        metadata_key = f"article_id_{article['id'] - 1}" if id.isdigit() else id
+        if metadata_key not in articles_metadata:
+            logger.warning(f"Article with ID {metadata_key} not found in articles_metadata")
+            # Continue with database data, but log the issue
+
+        # Apply metadata defaults
+        article = {
+            'id': article.get('id', ''),
+            'uuid': article.get('uuid', id),
+            'title': article.get('title', 'Untitled Article'),
+            'description': article.get('description', 'No description available.'),
+            'category': article.get('category', 'Uncategorized'),
+            'tags': article.get('tags', '').split(',') if article.get('tags') else [],
+            'image': article.get('image', 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg'),
+            'read_time': int(article.get('read_time', 5)) if str(article.get('read_time', 5)).isdigit() else 5,
+            'content': article.get('content', ''),
+            'views': article.get('views', 0),
+            'timestamp': article.get('timestamp', datetime.now(pytz.timezone('Asia/Nicosia')))
         }
 
-        # Update or insert in Supabase
-        response = supabase.table('articles').select('id, views, hidden').eq('id', article_id).execute()
-        article_db = response.data[0] if response.data else None
-        views = 1
-        if article_db:
-            if article_db['hidden']:
-                logger.warning(f"Article with ID {article_id} is hidden in DB")
-                return render_template('404.html', message="Article not found"), 404
+        # Normalize timestamp
+        timestamp = article['timestamp']
+        if isinstance(timestamp, str):
             try:
-                updated_views = int(article_db['views']) + 1 if article_db.get('views') else 1
-                supabase.table('articles').update({'views': updated_views}).eq('id', article_id).execute()
-                views = updated_views
-            except Exception as update_e:
-                logger.error(f"Error updating views for article {article_id}: {update_e}")
-                views = int(article_db['views']) if article_db.get('views') else 1
-        else:
-            try:
-                supabase.table('articles').insert({
-                    'id': article_id,
-                    'title': metadata['title'],
-                    'description': metadata['description'],
-                    'category': metadata['category'],
-                    'tags': metadata['tags'],  # Supabase stores arrays natively
-                    'image': metadata['image'],
-                    'read_time': metadata['read_time'],
-                    'content': metadata['content'],
-                    'views': 1,
-                    'hidden': False,
-                    'timestamp': metadata['timestamp'] if isinstance(metadata['timestamp'], str) else metadata['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
-                }).execute()
-                views = 1
-            except Exception as insert_e:
-                logger.error(f"Error inserting article {article_id} in DB: {insert_e}")
-                views = 1
+                timestamp = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+            except ValueError:
+                logger.warning(f"Invalid timestamp format for article {id}, fallback to now")
+                timestamp = datetime.now(pytz.timezone('Asia/Nicosia'))
+        article['timestamp'] = timestamp.astimezone(pytz.timezone('Asia/Nicosia')).strftime("%B %d, %Y %H:%M:%S")
 
-    except Exception as e:
-        logger.error(f"Database error for article {article_id}: {e}")
-        views = 1
-
-    # Parse timestamp
-    timestamp = metadata.get('timestamp', datetime.now(pytz.timezone('Asia/Nicosia')))
-    if isinstance(timestamp, str):
+        # Increment views
         try:
-            timestamp = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-        except ValueError:
-            logger.warning(f"Invalid timestamp format for article {article_id}, fallback to now")
-            timestamp = datetime.now(pytz.timezone('Asia/Nicosia'))
-    formatted_timestamp = timestamp.astimezone(pytz.timezone('Asia/Nicosia')).strftime("%B %d, %Y %H:%M:%S")
+            updated_views = article['views'] + 1
+            supabase.table('articles').update({'views': updated_views}).eq('uuid', article['uuid']).execute()
+            article['views'] = updated_views
+        except Exception as update_e:
+            logger.error(f"Error updating views for article {id}: {update_e}")
+            # Continue rendering with current views
 
-    # Convert markdown to HTML
-    content_md = metadata.get('content', 'No content available.')
-    try:
-        content_html = markdown2.markdown(
-            content_md,
-            extras=["fenced-code-blocks", "tables", "strike", "footnotes", "code-friendly"]
-        )
-    except Exception as md_e:
-        logger.error(f"Markdown conversion error for article {article_id}: {md_e}")
-        content_html = '<p>No content available.</p>'
+        # Convert markdown to HTML
+        content_md = article.get('content', '')
+        try:
+            content_html = markdown2.markdown(content_md, extras=["fenced-code-blocks", "tables", "strike", "footnotes", "code-friendly"])
+        except Exception as md_e:
+            logger.error(f"Markdown conversion error for article {id}: {md_e}")
+            content_html = '<p>No content available.</p>'
 
-    # Sanitize HTML
-    allowed_tags = [
-        'p', 'pre', 'code', 'img', 'h1', 'h2', 'h3', 'table', 'thead',
-        'tbody', 'tr', 'th', 'td', 'div', 'span', 'a', 'b', 'i', 'u',
-        'strong', 'em', 'ul', 'ol', 'li', 'br'
-    ]
-    allowed_attrs = {
-        'a': ['href', 'title', 'target', 'rel'],
-        'img': ['src', 'alt', 'title', 'width', 'height'],
-        'div': ['class'],
-        'span': ['class']
-    }
-    try:
-        content_html = bleach.clean(content_html, tags=allowed_tags, attributes=allowed_attrs)
-    except Exception as bleach_e:
-        logger.error(f"Bleach sanitization error for article {article_id}: {bleach_e}")
-        content_html = '<p>No content available.</p>'
+        # Sanitize HTML
+        allowed_tags = [
+            'p', 'pre', 'code', 'img', 'h1', 'h2', 'h3', 'table', 'thead',
+            'tbody', 'tr', 'th', 'td', 'div', 'span', 'a', 'b', 'i', 'u',
+            'strong', 'em', 'ul', 'ol', 'li', 'br'
+        ]
+        allowed_attrs = {
+            'a': ['href', 'title', 'target', 'rel'],
+            'img': ['src', 'alt', 'title', 'width', 'height'],
+            'div': ['class'],
+            'span': ['class']
+        }
+        try:
+            article['content'] = bleach.clean(content_html, tags=allowed_tags, attributes=allowed_attrs)
+        except Exception as bleach_e:
+            logger.error(f"Bleach sanitization error for article {id}: {bleach_e}")
+            article['content'] = '<p>No content available.</p>'
 
-    # Build article object
-    article = {
-        'id': str(article_id),
-        'title': metadata['title'],
-        'description': metadata['description'],
-        'category': metadata['category'],
-        'tags': metadata['tags'],
-        'image': metadata['image'],
-        'read_time': metadata['read_time'],
-        'timestamp': formatted_timestamp,
-        'views': views,
-        'content': content_html
-    }
-
-    return render_template('article.html', article=article)
+        return render_template('article.html', article=article)
+    except Exception as e:
+        logger.error(f"Error fetching article {id}: {str(e)}", exc_info=True)
+        return render_template('404.html', message="Article not found"), 404
+    
 
 
 @app.route('/')
