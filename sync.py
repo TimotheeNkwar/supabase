@@ -2,17 +2,12 @@ import os
 import logging
 from datetime import datetime
 import pytz
-import pymysql
-from urllib.parse import urlparse
 from dotenv import load_dotenv
-import pandas as pd
-import numpy as np
-
-
+from supabase import create_client, Client
 
 # Configure logging
 logging.basicConfig(
-    level=logging.WARNING,
+    level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[logging.StreamHandler()]
 )
@@ -20,6 +15,15 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
+
+# Supabase configuration
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')
+if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+    logger.critical("Supabase configuration missing!")
+    raise RuntimeError("Supabase configuration missing!")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+
 
 # Articles metadata
 articles_metadata = {
@@ -1571,150 +1575,69 @@ Data science drives predictive maintenance, reducing downtime and costs."""
 
 
 
-def get_db_connection():
-    """Establish a connection to JawsDB MySQL or local database."""
-    jawsdb_url = os.getenv('JAWSDB_CHARCOAL_URL')
+
+def insert_articles_supabase():
+    """Insert or update articles from articles_metadata into Supabase."""
     try:
-        if jawsdb_url:
-            url = urlparse(jawsdb_url)
-            config = {
-                'host': url.hostname,
-                'user': url.username,
-                'password': url.password,
-                'database': url.path[1:],
-                'port': url.port or 3306,
-                'charset': 'utf8mb4',
-                'cursorclass': pymysql.cursors.DictCursor,
-                'autocommit': False
+        for article_uuid, metadata in articles_metadata.items():
+            tags_value = metadata.get('tags', [])
+            if isinstance(tags_value, list):
+                tags_value = ', '.join(tags_value) if tags_value else None
+
+            timestamp = metadata.get('timestamp', datetime.now(pytz.timezone('Asia/Nicosia')))
+            if isinstance(timestamp, str):
+                try:
+                    timestamp = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                except ValueError:
+                    timestamp = datetime.now(pytz.timezone('Asia/Nicosia'))
+
+            # Vérifie si l'article existe déjà (par uuid)
+            response = supabase.table('articles').select('uuid').eq('uuid', article_uuid).single().execute()
+            exists = response.data is not None
+
+            article_data = {
+                'uuid': article_uuid,
+                'title': metadata.get('title', 'Untitled Article'),
+                'content': metadata.get('content', 'No content available.'),
+                'category': metadata.get('category', 'uncategorized'),
+                'description': metadata.get('description', 'No description available.'),
+                'tags': tags_value,
+                'image': metadata.get('image', 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg'),
+                'read_time': metadata.get('read_time', 5),
+                'timestamp': timestamp.isoformat() if isinstance(timestamp, datetime) else timestamp,
+                'views': 0,
+                'created_at': datetime.now(pytz.timezone('Asia/Nicosia')).isoformat(),
+                'created_by': None,
+                'hidden': metadata.get('hidden', False)
             }
-        else:
-            config = {
-                'host': 'localhost',
-                'user': 'root',
-                'password': os.getenv('LOCAL_MYSQL_PASSWORD', ''),
-                'database': 'datacraft_db',
-                'port': 3306,
-                'charset': 'utf8mb4',
-                'cursorclass': pymysql.cursors.DictCursor,
-                'autocommit': False
-            }
-        conn = pymysql.connect(**config)
-        logger.info("Successfully connected to database")
-        return conn
-    except pymysql.MySQLError as e:
-        logger.error(f"Failed to connect to database: {str(e)}")
-        raise
 
-def create_articles_table():
-    """Create the articles table if it doesn't exist."""
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS articles (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    uuid VARCHAR(36) UNIQUE,
-                    title VARCHAR(255) NOT NULL,
-                    content TEXT,
-                    category VARCHAR(50),
-                    description TEXT,
-                    tags VARCHAR(255),
-                    image VARCHAR(255),
-                    read_time INT,
-                    hidden BOOLEAN DEFAULT FALSE,
-                    timestamp DATETIME,
-                    views INT DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    created_by INT,
-                    updated_by INT,
-                    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-                    FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-            ''')
-            conn.commit()
-            logger.info("Articles table checked/created successfully.")
-    except pymysql.MySQLError as e:
-        logger.error(f"Error creating articles table: {str(e)}")
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+            if exists:
+                # Update only if title or content is missing
+                update_fields = {}
+                if not response.data.get('title'):
+                    update_fields['title'] = article_data['title']
+                if not response.data.get('content'):
+                    update_fields['content'] = article_data['content']
+                if update_fields:
+                    supabase.table('articles').update(update_fields).eq('uuid', article_uuid).execute()
+                    logger.info(f"Article {article_uuid} updated in Supabase.")
+                else:
+                    logger.info(f"Article {article_uuid} already exists with data, skipping update.")
+            else:
+                supabase.table('articles').insert(article_data).execute()
+                logger.info(f"Article {article_uuid} inserted into Supabase.")
 
-def insert_articles():
-    """Insert or update articles from articles_metadata into the database."""
-    create_articles_table()
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cursor:
-            for article_uuid, metadata in articles_metadata.items():
-                tags_value = metadata.get('tags', [])
-                if isinstance(tags_value, list):
-                    tags_value = ', '.join(tags_value) if tags_value else None
-
-                timestamp = metadata.get('timestamp', datetime.now(pytz.timezone('Asia/Nicosia')))
-                if isinstance(timestamp, str):
-                    try:
-                        timestamp = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-                    except ValueError:
-                        timestamp = datetime.now(pytz.timezone('Asia/Nicosia'))
-
-                cursor.execute('SELECT title, content FROM articles WHERE id = %s', (article_uuid,))
-                existing = cursor.fetchone()
-
-                if existing and existing['title'] and existing['content']:
-                    logger.info(f"Article {article_uuid} exists with data, skipping update.")
-                    continue
-
-                cursor.execute('''
-                    INSERT INTO articles (
-                        uuid, title, content, category, description, tags, image, read_time, 
-                        timestamp, views, created_at, created_by, hidden
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON DUPLICATE KEY UPDATE
-                        title = COALESCE(NULLIF(VALUES(title), ''), title),
-                        content = COALESCE(NULLIF(VALUES(content), ''), content),
-                        category = VALUES(category),
-                        description = VALUES(description),
-                        tags = VALUES(tags),
-                        image = VALUES(image),
-                        read_time = VALUES(read_time),
-                        timestamp = VALUES(timestamp),
-                        hidden = VALUES(hidden)
-                ''', (
-                    article_uuid,
-                    metadata.get('title', 'Untitled Article'),
-                    metadata.get('content', 'No content available.'),
-                    metadata.get('category', 'uncategorized'),
-                    metadata.get('description', 'No description available.'),
-                    tags_value,
-                    metadata.get('image', 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg'),
-                    metadata.get('read_time', 5),
-                    timestamp,
-                    0,
-                    datetime.now(pytz.timezone('Asia/Nicosia')),
-                    None,
-                    metadata.get('hidden', 0)
-                ))
-            conn.commit()
-            logger.info("Articles metadata synced successfully.")
-            return True
-    except pymysql.MySQLError as e:
-        logger.error(f"Error syncing articles_metadata: {str(e)}")
-        conn.rollback()
-        return False
+        logger.info("Articles metadata synced successfully with Supabase.")
+        return True
     except Exception as e:
-        logger.error(f"Unexpected error syncing articles_metadata: {str(e)}")
-        conn.rollback()
+        logger.exception(f"Error syncing articles_metadata with Supabase: {str(e)}")
         return False
-    finally:
-        conn.close()
 
 if __name__ == '__main__':
     try:
-        success = insert_articles()
+        success = insert_articles_supabase()
         if success:
-            print("Successfully inserted/updated articles into the database.")
+            print("Successfully inserted/updated articles into Supabase.")
         else:
             print("Failed to insert/update articles. Check logs for details.")
     except Exception as e:
