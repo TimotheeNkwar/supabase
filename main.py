@@ -898,7 +898,15 @@ def login():
             flash('Login failed.', 'error')
     return render_template('login.html')
 
-
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        # Ici, tu dois vérifier si l'email existe, générer un token, envoyer un email, etc.
+        # Pour la démo, on affiche juste un message
+        flash('If this email exists, a reset link has been sent.', 'success')
+        return redirect(url_for('login'))
+    return render_template('forgot_password.html')
 
 @app.route('/logout')
 @login_required
