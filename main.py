@@ -380,6 +380,30 @@ def request_password_reset():
         logger.error(f"request_password_reset error: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
+@api.route('/auth/verify-reset', methods=['POST'])
+@limiter.limit("10 per minute")
+def verify_password_reset_code():
+    try:
+        data = request.get_json(silent=True) or {}
+        email = (data.get('email') or '').strip().toLower() if hasattr(str, 'toLower') else (data.get('email') or '').strip().lower()
+        code = (data.get('code') or '').strip()
+        if not email or not code:
+            return jsonify({'error': 'Email and code are required'}), 400
+        res = supabase.table('password_resets').select('id, email, code, expires_at, used').eq('email', email).eq('code', code).eq('used', False).order('created_at', desc=True).limit(1).execute()
+        entry = (res.data or [None])[0]
+        if not entry:
+            return jsonify({'error': 'Invalid code'}), 400
+        try:
+            expires_at = datetime.fromisoformat(str(entry.get('expires_at')).replace('Z', '+00:00'))
+        except Exception:
+            expires_at = datetime.now(timezone.utc)
+        if datetime.now(timezone.utc) > expires_at:
+            return jsonify({'error': 'Code expired'}), 400
+        return jsonify({'valid': True}), 200
+    except Exception as e:
+        logger.error(f"verify_password_reset_code error: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
 @api.route('/auth/reset-password', methods=['POST'])
 @limiter.limit("5 per minute")
 def reset_password_with_code():
