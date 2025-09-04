@@ -1681,6 +1681,7 @@ def track_view(article_id):
             # Broadcast via Socket.IO as a fallback for clients
             socketio.emit('article_update', {
                 'id': article_id,
+                'uuid': article_id,
                 'views': current_views + 1,
                 'timestamp': response.data.get('timestamp')
             })

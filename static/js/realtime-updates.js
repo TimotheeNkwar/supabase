@@ -56,8 +56,8 @@ try {
   if (window.io) {
     const socket = window.io();
     socket.on('article_update', (data) => {
-      if (!data || !data.id) return;
-      const articleId = data.id;
+      if (!data) return;
+      const articleId = data.id || data.uuid;
       const views = data.views;
       const viewCountElement = document.querySelector(`.view-count[data-article-id="${articleId}"] .view-count-text`);
       if (viewCountElement && typeof views !== 'undefined') {
