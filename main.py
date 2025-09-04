@@ -1672,11 +1672,11 @@ def track_view(article_id):
     Incrémente le nombre de vues d'un article.
     """
     try:
-        response = supabase.table('articles').select('views, timestamp').eq('id', article_id).single().execute()
+        response = supabase.table('articles').select('views, timestamp').eq('uuid', article_id).single().execute()
         if not response.data:
             return jsonify({'error': 'Article not found'}), 404
         current_views = response.data.get('views', 0)
-        supabase.table('articles').update({'views': current_views + 1}).eq('id', article_id).execute()
+        supabase.table('articles').update({'views': current_views + 1}).eq('uuid', article_id).execute()
         return jsonify({'views': current_views + 1}), 200
     except Exception as e:
         logger.exception(f"Error tracking view for article {article_id}: {str(e)}")

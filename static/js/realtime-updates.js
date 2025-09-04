@@ -14,7 +14,7 @@ supabase
     { event: 'UPDATE', schema: 'public', table: 'articles' },
     (payload) => {
       const article = payload.new;
-      const articleId = article.id || article.id;
+      const articleId = article.id || article.uuid;
       const timestamp = article.timestamp;
       const views = article.views;
 
