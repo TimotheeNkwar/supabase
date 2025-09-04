@@ -539,46 +539,6 @@ The IMPACT framework streamlines data science projects, ensuring actionable outc
                     dcc.Graph(id='scatter-plot', className='w-full md:w-1/2 p-2'),
                     dcc.Graph(id='histogram', className='w-full md:w-1/2 p-2')
                 ]),
-                dcc.Graph(id='box-plot', className='w-full p-2')
-            ])
-            ```
-
-            **Explanation**:
-            - **Tailwind CSS**: Added via CDN for modern, responsive styling.
-            - **Classes**: Tailwind classes like `container`, `mx-auto`, `p-4`, `flex`, and `w-full` create a clean, responsive layout.
-            - **Styling**: The dropdown and graphs are styled for better readability and aesthetics.
-
-            ### Advanced Features
-            To make the dashboard even more powerful, consider adding:
-            - **Data Table**: Use `dash_table.DataTable` to display raw data alongside visualizations.
-            - **Download Button**: Allow users to export the filtered dataset as a CSV file.
-            - **Real-Time Updates**: Use Dash callbacks with `dcc.Interval` to refresh data from a live source (e.g., API or database).
-
-            Here’s an example of adding a data table:
-
-            ```python
-            from dash import Dash, dcc, html, Input, Output
-            from dash_table import DataTable
-            import plotly.express as px
-            import pandas as pd
-
-            app = Dash(__name__, external_stylesheets=['https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css'])
-            df = px.data.iris()
-
-            app.layout = html.Div(className='container mx-auto p-4', children=[
-                html.H1("Comprehensive Iris Dashboard", className='text-3xl font-bold text-center mb-4 text-gray-800'),
-                html.Label("Select Species:", className='block text-lg font-medium text-gray-700 mb-2'),
-                dcc.Dropdown(
-                    id='species-dropdown',
-                    options=[{'label': 'All Species', 'value': 'all'}] + 
-                            [{'label': species, 'value': species} for species in df['species'].unique()],
-                    value='all',
-                    className='w-1/2 mx-auto mb-4 p-2 border rounded'
-                ),
-                html.Div(className='flex flex-wrap', children=[
-                    dcc.Graph(id='scatter-plot', className='w-full md:w-1/2 p-2'),
-                    dcc.Graph(id='histogram', className='w-full md:w-1/2 p-2')
-                ]),
                 dcc.Graph(id='box-plot', className='w-full p-2'),
                 html.H2("Data Table", className='text-2xl font-semibold text-gray-700 mt-6 mb-2'),
                 DataTable(
@@ -1241,7 +1201,7 @@ The future of data science in climate change is promising. Emerging trends inclu
 
 ## Conclusion
 
-Data science is a linchpin in the fight against climate change, offering tools to analyze environmental data, model future scenarios, and implement sustainable solutions. From predicting climate trends with machine learning to optimizing renewable energy systems, data science empowers stakeholders to make informed decisions. However, challenges like data quality, scalability, and ethics must be addressed to maximize impact. As technology advances, the integration of AI, big data, and interdisciplinary collaboration will be crucial for building a sustainable future. By harnessing the power of data, we can mitigate the effects of climate change and create a more resilient world."""
+Data science is a linchpin in the fight against climate change, offering tools to analyze environmental data, model future scenarios, and implement sustainable solutions. From predicting climate trends with machine learning to optimizing renewable energy systems, data science empowers stakeholders to make informed decisions. However, challenges like data privacy and interoperability must be addressed to maximize impact. As technology advances, the integration of AI, big data, and interdisciplinary collaboration will be crucial for building a sustainable future. By harnessing the power of data, we can mitigate the effects of climate change and create a more resilient world."""
     },
     "25": {
         "title": "Data Science in Sports: Analyzing Performance Metrics for Competitive Advantage",
@@ -1579,15 +1539,14 @@ Data science drives predictive maintenance, reducing downtime and costs."""
 
 
 def insert_articles_supabase():
-    """Insert or update articles from articles_metadata into Supabase."""
+    """Insert articles from articles_metadata into Supabase only if they do not already exist."""
     try:
         for article_key, metadata in articles_metadata.items():
-            # Si la clé n'est pas un vrai UUID, on en génère un
+            # Génère un UUID valide à partir de la clé
             try:
                 uuid_obj = uuid_lib.UUID(article_key)
                 article_uuid = str(uuid_obj)
             except ValueError:
-                # Génère un UUID déterministe à partir de la clé (pour garder la même valeur à chaque exécution)
                 article_uuid = str(uuid_lib.uuid5(uuid_lib.NAMESPACE_DNS, article_key))
 
             tags_value = metadata.get('tags', [])
@@ -1602,44 +1561,43 @@ def insert_articles_supabase():
                     timestamp = datetime.now(pytz.timezone('Asia/Nicosia'))
 
             # Vérifie si l'article existe déjà (par uuid)
-            response = supabase.table('articles').select('uuid').eq('uuid', article_uuid).single().execute()
-            exists = response.data is not None
+            response = supabase.table('articles').select('uuid').eq('uuid', article_uuid).execute()
+            exists = response.data is not None and len(response.data) > 0
 
-            article_data = {
-                'uuid': article_uuid,
-                'title': metadata.get('title', 'Untitled Article'),
-                'content': metadata.get('content', 'No content available.'),
-                'category': metadata.get('category', 'uncategorized'),
-                'description': metadata.get('description', 'No description available.'),
-                'tags': tags_value,
-                'image': metadata.get('image', 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg'),
-                'read_time': metadata.get('read_time', 5),
-                'timestamp': timestamp.isoformat() if isinstance(timestamp, datetime) else timestamp,
-                'views': 0,
-                'created_at': datetime.now(pytz.timezone('Asia/Nicosia')).isoformat(),
-                'created_by': None,
-                'hidden': metadata.get('hidden', False)
-            }
-
-            if exists:
-                supabase.table('articles').update(article_data).eq('uuid', article_uuid).execute()
-                logger.info(f"Article {article_uuid} updated in Supabase.")
-            else:
+            if not exists:
+                article_data = {
+                    'uuid': article_uuid,
+                    'title': metadata.get('title', 'Untitled Article'),
+                    'content': metadata.get('content', 'No content available.'),
+                    'category': metadata.get('category', 'uncategorized'),
+                    'description': metadata.get('description', 'No description available.'),
+                    'tags': tags_value,
+                    'image': metadata.get('image', 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg'),
+                    'read_time': metadata.get('read_time', 5),
+                    'timestamp': timestamp.isoformat() if isinstance(timestamp, datetime) else timestamp,
+                    'views': 0,
+                    'created_at': datetime.now(pytz.timezone('Asia/Nicosia')).isoformat(),
+                    'created_by': None,
+                    'hidden': metadata.get('hidden', False)
+                }
                 supabase.table('articles').insert(article_data).execute()
                 logger.info(f"Article {article_uuid} inserted into Supabase.")
+            else:
+                logger.info(f"Article {article_uuid} already exists. Skipping insertion.")
 
-        logger.info("Articles metadata synced successfully with Supabase.")
+        logger.info("Articles metadata sync completed (insert only if not exists).")
         return True
     except Exception as e:
         logger.exception(f"Error syncing articles_metadata with Supabase: {str(e)}")
         return False
+
 if __name__ == '__main__':
     try:
         success = insert_articles_supabase()
         if success:
-            print("Successfully inserted/updated articles into Supabase.")
+            print("Successfully inserted new articles into Supabase.")
         else:
-            print("Failed to insert/update articles. Check logs for details.")
+            print("Failed to insert articles. Check logs for details.")
     except Exception as e:
         logger.critical(f"Failed to run script: {str(e)}")
         print(f"Critical error: {str(e)}")
