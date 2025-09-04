@@ -4,15 +4,22 @@
 // Configuration Supabase
 const supabaseUrl = 'https://gtinadlpbreniysssjai.supabase.co'; // Ton URL Supabase
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0aW5hZGxwYnJlbml5c3NzamFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQzMTE3MjcsImV4cCI6MjA2OTg4NzcyN30.LLrCSXgAF30gFq5BrHZhc_KEiasF8LfyZTEExbfwjUk'; // Clé publique (anon key)
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+const supabaseClient = (window.supabase && window.supabase.createClient)
+  ? window.supabase.createClient(supabaseUrl, supabaseKey)
+  : null;
+
+if (!supabaseClient) {
+  console.error('[Realtime] Supabase library not loaded before realtime-updates.js');
+}
 
 // Abonnement aux changements en temps réel sur la table articles
-supabase
+supabaseClient && supabaseClient
   .channel('public:articles')
   .on(
     'postgres_changes',
     { event: 'UPDATE', schema: 'public', table: 'articles' },
     (payload) => {
+      console.debug('[Realtime] Update received', payload);
       const article = payload.new;
       const articleId = article.id || article.uuid;
       const timestamp = article.timestamp;
