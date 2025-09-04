@@ -796,8 +796,6 @@ def create_article():
 
 
 
-
-
 @api.route('/articles/<article_id>', methods=['PUT'])
 @limiter.limit("5 per minute")
 @login_required
@@ -1653,58 +1651,42 @@ def recommend_movies():
 
 
 
-
-
-
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-
+@app.route('/api/track-view/<article_id>', methods=['POST'])
+@limiter.limit("10 per minute")
+def track_view(article_id):
     """
-    Serve a static file from the static folder.
-
-    This function is a simple wrapper around flask.send_from_directory,
-    which is used to serve static files from the static folder.
-
-    :param filename: The name of the file to serve, relative to the static folder.
-    :return: The contents of the file as a response object.
+    Incrémente le nombre de vues d'un article et émet un événement Socket.IO pour la mise à jour en temps réel.
     """
-
-    logger.info(f"Serving static file: {filename}")
-    return send_from_directory(app.static_folder, filename)
-
-
-
-@socketio.on('track_view')
-def handle_track_view(data):
-    article_id = data.get('article_id')
-    if not article_id:
-        logger.error("No article_id provided in track_view event")
-        return
     try:
-        response = supabase.table('articles').select('views').eq('uuid', article_id).single().execute()
+        response = supabase.table('articles').select('views, timestamp').eq('uuid', article_id).single().execute()
         if not response.data:
-            logger.error(f"Article not found for id: {article_id}")
-            return
+            return jsonify({'error': 'Article not found'}), 404
         current_views = response.data.get('views', 0)
+        timestamp = response.data.get('timestamp')
         supabase.table('articles').update({'views': current_views + 1}).eq('uuid', article_id).execute()
-        result = supabase.table('articles').select('views').eq('uuid', article_id).single().execute()
+        # Récupère les nouvelles valeurs pour l'emit
+        result = supabase.table('articles').select('views, timestamp').eq('uuid', article_id).single().execute()
         new_views = result.data.get('views', 0)
-        socketio.emit('article_update', {'id': article_id, 'views': new_views})
+        new_timestamp = result.data.get('timestamp')
+        socketio.emit('article_update', {
+            'id': article_id,
+            'views': new_views,
+            'timestamp': new_timestamp
+        })
         logger.info(f"Tracked view for article {article_id}, new views: {new_views}")
+        return jsonify({'views': new_views, 'timestamp': new_timestamp}), 200
     except Exception as e:
-        logger.error(f"Error tracking view for article {article_id}: {str(e)}", exc_info=True)
-
+        logger.exception(f"Error tracking view for article {article_id}: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @socketio.on('connect')
 def handle_connect():
     logger.info('Client connected')
 
-
 @socketio.on('disconnect')
 def handle_disconnect():
     logger.info('Client disconnected')
-
 
 # Custom rate limit exceeded response
 @limiter.request_filter
