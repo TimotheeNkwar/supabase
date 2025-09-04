@@ -572,7 +572,9 @@
             });
 
             // Trigger HTTP POST to increment view count once after load
-            if (!viewTracked) {
+            const viewKey = `viewTracked:{{ (article.uuid or article.id) | default('unknown', true) }}`;
+            const suppressed = (() => { try { return localStorage.getItem(viewKey) === '1'; } catch (_) { return false; } })();
+            if (!viewTracked && !suppressed) {
                 setTimeout(async () => {
                     try {
                         const res = await fetch(`/api/track-view/{{ (article.uuid or article.id) | default('unknown', true) }}`, {
@@ -582,6 +584,7 @@
                         const data = await res.json();
                         console.debug('View tracked via HTTP:', data);
                         viewTracked = true;
+                        try { localStorage.setItem(viewKey, '1'); } catch (_) {}
                     } catch (e) {
                         console.warn('Failed to track view via HTTP', e);
                     }

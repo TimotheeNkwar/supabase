@@ -152,7 +152,7 @@
         </div>
         <div class="grid lg:grid-cols-3 gap-8">
             {% for article in articles[:3] %}
-            <article class="card h-full post-card animate-fade-in" data-article-id="{{ article.id | safe }}">
+            <article class="card h-full post-card animate-fade-in" data-article-id="{{ (article.uuid or article.id) | safe }}">
                 <div class="relative mb-4">
                     <img src="{{ article.image | safe }}" alt="{{ article.title | safe }}" class="w-full h-48 object-cover rounded-lg" loading="lazy" onerror="this.src='https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'; this.onerror=null;" />
                     <div class="absolute top-4 right-4">
@@ -168,10 +168,10 @@
                         {{ article.description | safe }}
                     </p>
                     <div class="flex items-center justify-between text-sm text-text-secondary mb-4">
-                        <span class="timestamp" data-article-id="{{ article.id | safe }}">
+                        <span class="timestamp" data-article-id="{{ (article.uuid or article.id) | safe }}">
                             <span class="timestamp-text" data-initial="{{ article.timestamp | safe }}">Loading...</span>
                         </span>
-                        <span class="view-count" data-article-id="{{ article.id | safe }}">
+                        <span class="view-count" data-article-id="{{ (article.uuid or article.id) | safe }}">
                             <span class="view-count-text">
                                 {% if article.views >= 1000 %}
                                     {{ (article.views / 1000) | float | round(1) }}K views
@@ -216,7 +216,7 @@
             </div>
             <div id="posts-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {% for article in articles[3:] %}
-                <article class="card h-full post-card hidden animate-fade-in" data-category="{{ article.category }}" data-article-id="{{ article.id }}">
+                <article class="card h-full post-card hidden animate-fade-in" data-category="{{ article.category }}" data-article-id="{{ article.uuid or article.id }}">
                     <div class="relative mb-4">
                         <img src="{{ article.image }}" alt="{{ article.title }}" class="w-full h-40 object-cover rounded-lg" loading="lazy" onerror="this.src='https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'; this.onerror=null;" />
                         <div class="absolute top-3 left-3">
@@ -231,10 +231,10 @@
                             {{ article.description }}
                         </p>
                         <div class="flex items-center justify-between text-xs text-text-secondary mb-3">
-                            <span class="timestamp" data-article-id="{{ article.id }}">
+                            <span class="timestamp" data-article-id="{{ article.uuid or article.id }}">
                                 <span class="timestamp-text" data-initial="{{ article.timestamp }}">{{ article.timestamp }}</span>
                             </span>
-                            <span class="view-count" data-article-id="{{ article.id }}">
+                            <span class="view-count" data-article-id="{{ article.uuid or article.id }}">
                                 <span class="view-count-text">
                                     {% if article.views >= 1000 %}
                                         {{ (article.views / 1000) | float | round(1) }}K views

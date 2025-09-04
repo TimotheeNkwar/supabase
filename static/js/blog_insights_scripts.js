@@ -142,4 +142,44 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn('filterPosts failed', e);
         }
     };
+
+    // Optimistic view tracking on "Read More" clicks with beacon to avoid double-count
+    function trackViewBeacon(articleId) {
+        if (!articleId) return;
+        const key = `viewTracked:${articleId}`;
+        try {
+            // Mark as tracked to prevent article page from re-posting
+            localStorage.setItem(key, '1');
+        } catch (_) {}
+        const url = `/api/track-view/${articleId}`;
+        try {
+            if (navigator.sendBeacon) {
+                const blob = new Blob([], { type: 'application/json' });
+                navigator.sendBeacon(url, blob);
+            } else {
+                fetch(url, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' } }).catch(() => {});
+            }
+        } catch (_) {}
+    }
+
+    function incrementDomViewCount(articleId) {
+        const el = document.querySelector(`.view-count[data-article-id="${articleId}"] .view-count-text`);
+        if (!el) return;
+        const current = parseInt((el.textContent || '').replace(/[^0-9]/g, '')) || 0;
+        const next = current + 1;
+        el.textContent = next >= 1000 ? `${(next / 1000).toFixed(1)}K views` : `${next} view${next !== 1 ? 's' : ''}`;
+    }
+
+    // Delegate clicks on Read More links to send beacon and optimistically update UI
+    document.addEventListener('click', (e) => {
+        const link = e.target.closest('a');
+        if (!link) return;
+        // Matches both featured and recent post links
+        const postCard = link.closest('.post-card');
+        if (!postCard) return;
+        const articleId = postCard.getAttribute('data-article-id');
+        if (!articleId) return;
+        trackViewBeacon(articleId);
+        incrementDomViewCount(articleId);
+    });
 });
