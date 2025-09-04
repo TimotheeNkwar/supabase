@@ -308,7 +308,7 @@
                             {{ article.timestamp | default('2025-01-01T00:00:00Z', true) | datetimeformat }}
                         </time>
                         <span class="view-count"
-                              data-article-id="{{ article.id | default('unknown', true) }}"
+                              data-article-id="{{ (article.uuid or article.id) | default('unknown', true) }}"
                               aria-live="polite"
                               aria-label="View count">
                             <span class="view-count-text">
@@ -575,7 +575,7 @@
             if (!viewTracked) {
                 setTimeout(async () => {
                     try {
-                        const res = await fetch(`/api/track-view/{{ article.id | default('unknown', true) }}`, {
+                        const res = await fetch(`/api/track-view/{{ (article.uuid or article.id) | default('unknown', true) }}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' }
                         });
@@ -589,8 +589,10 @@
             }
 
             socket.on('article_update', (data) => {
-                if (data.id === "{{ article.id | default('unknown', true) }}") {
-                    const viewCountElement = document.querySelector(`.view-count[data-article-id="${data.id}"] .view-count-text`);
+                const thisArticleId = "{{ (article.uuid or article.id) | default('unknown', true) }}";
+                if (data.id === thisArticleId || data.uuid === thisArticleId) {
+                    const targetId = data.id || data.uuid;
+                    const viewCountElement = document.querySelector(`.view-count[data-article-id="${targetId}"] .view-count-text`);
                     if (viewCountElement) {
                         viewCountElement.textContent = data.views >= 1000
                             ? `${(data.views / 1000).toFixed(1)}K views`
