@@ -121,4 +121,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize
     initializePosts();
+
+    // Expose global filter function for inline onclick handlers
+    window.filterPosts = function (category) {
+        try {
+            // Update active button styling
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            const matching = Array.from(filterButtons).find(btn => {
+                const attr = btn.getAttribute('onclick') || '';
+                return attr.includes(`'${category}'`);
+            });
+            if (matching) matching.classList.add('active');
+
+            // Apply filter using existing logic
+            const query = (searchInput.value || '').toLowerCase();
+            filterAndSortPosts(query, category, sortSelect.value);
+        } catch (e) {
+            console.warn('filterPosts failed', e);
+        }
+    };
 });
