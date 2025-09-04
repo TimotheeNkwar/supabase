@@ -27,10 +27,13 @@ from pymongo import MongoClient
 import markdown2
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
+from articles_data import articles_metadata
+from database import get_db_connection
 import uuid
 from sklearn.preprocessing import StandardScaler
 import google.generativeai as genai
 from urllib.parse import urlparse
+import pymysql
 from google.generativeai import configure as genai_configure, embed_content, GenerativeModel
 import random
 from flask import Flask, Response
@@ -38,6 +41,7 @@ from datetime import datetime, timezone
 import requests
 from zoneinfo import ZoneInfo
 from supabase import create_client, Client
+
 
 # Configure logging
 logging.basicConfig(
