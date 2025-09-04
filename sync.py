@@ -4,7 +4,8 @@ from datetime import datetime
 import pytz
 from dotenv import load_dotenv
 from supabase import create_client, Client
-
+import json
+import uuid as uuid_lib
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -1576,10 +1577,19 @@ Data science drives predictive maintenance, reducing downtime and costs."""
 
 
 
+
 def insert_articles_supabase():
     """Insert or update articles from articles_metadata into Supabase."""
     try:
-        for article_uuid, metadata in articles_metadata.items():
+        for article_key, metadata in articles_metadata.items():
+            # Si la clé n'est pas un vrai UUID, on en génère un
+            try:
+                uuid_obj = uuid_lib.UUID(article_key)
+                article_uuid = str(uuid_obj)
+            except ValueError:
+                # Génère un UUID déterministe à partir de la clé (pour garder la même valeur à chaque exécution)
+                article_uuid = str(uuid_lib.uuid5(uuid_lib.NAMESPACE_DNS, article_key))
+
             tags_value = metadata.get('tags', [])
             if isinstance(tags_value, list):
                 tags_value = ', '.join(tags_value) if tags_value else None
@@ -1612,17 +1622,8 @@ def insert_articles_supabase():
             }
 
             if exists:
-                # Update only if title or content is missing
-                update_fields = {}
-                if not response.data.get('title'):
-                    update_fields['title'] = article_data['title']
-                if not response.data.get('content'):
-                    update_fields['content'] = article_data['content']
-                if update_fields:
-                    supabase.table('articles').update(update_fields).eq('uuid', article_uuid).execute()
-                    logger.info(f"Article {article_uuid} updated in Supabase.")
-                else:
-                    logger.info(f"Article {article_uuid} already exists with data, skipping update.")
+                supabase.table('articles').update(article_data).eq('uuid', article_uuid).execute()
+                logger.info(f"Article {article_uuid} updated in Supabase.")
             else:
                 supabase.table('articles').insert(article_data).execute()
                 logger.info(f"Article {article_uuid} inserted into Supabase.")
@@ -1632,7 +1633,6 @@ def insert_articles_supabase():
     except Exception as e:
         logger.exception(f"Error syncing articles_metadata with Supabase: {str(e)}")
         return False
-
 if __name__ == '__main__':
     try:
         success = insert_articles_supabase()
