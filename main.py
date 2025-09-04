@@ -1672,18 +1672,18 @@ def track_view(article_id):
     Incrémente le nombre de vues d'un article et émet un événement Socket.IO pour la mise à jour en temps réel.
     """
     try:
-        response = supabase.table('articles').select('views, timestamp').eq('uuid', article_id).single().execute()
+        response = supabase.table('articles').select('views, timestamp').eq('id', article_id).single().execute()
         if not response.data:
             return jsonify({'error': 'Article not found'}), 404
         current_views = response.data.get('views', 0)
         timestamp = response.data.get('timestamp')
-        supabase.table('articles').update({'views': current_views + 1}).eq('uuid', article_id).execute()
+        supabase.table('articles').update({'views': current_views + 1}).eq('id', article_id).execute()
         # Récupère les nouvelles valeurs pour l'emit
-        result = supabase.table('articles').select('views, timestamp').eq('uuid', article_id).single().execute()
+        result = supabase.table('articles').select('views, timestamp').eq('id', article_id).single().execute()
         new_views = result.data.get('views', 0)
         new_timestamp = result.data.get('timestamp')
         socketio.emit('article_update', {
-            'uuid': article_id,
+            'id': article_id,
             'views': new_views,
             'timestamp': new_timestamp
         })
