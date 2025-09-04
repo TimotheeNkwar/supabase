@@ -879,6 +879,8 @@ def login():
     if request.method == 'POST':
         username = bleach.clean(request.form.get('username', ''))
         password = request.form.get('password', '')
+        remember = request.form.get('remember') == 'on'  # <-- Ajouté
+
         if not username or not password:
             flash('Username and password are required.', 'error')
             return redirect(url_for('login'))
@@ -887,7 +889,7 @@ def login():
             user = response.data
             if user and bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
                 user_obj = User(id=user['id'], username=user['username'])
-                login_user(user_obj)
+                login_user(user_obj, remember=remember)  # <-- Ajouté ici
                 supabase.table('users').update({'last_login': datetime.now(timezone.utc).isoformat()}).eq('id', user['id']).execute()
                 flash('Login successful!', 'success')
                 return redirect(url_for('admin'))
