@@ -1009,7 +1009,7 @@ def update_article(article_id):
 def delete_article(article_id):
     try:
         if str(article_id).isdigit():
-            result = supabase.table('articles').delete().eq('uuid', int(article_id)).execute()
+            result = supabase.table('articles').delete().eq('uuid', article_id).execute()
         elif is_valid_uuid(article_id):
             result = supabase.table('articles').delete().eq('uuid', article_id).execute()
         else:
