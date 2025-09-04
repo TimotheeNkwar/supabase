@@ -425,7 +425,7 @@ def request_password_reset():
 def verify_password_reset_code():
     try:
         data = request.get_json(silent=True) or {}
-        email = (data.get('email') or '').strip().toLower() if hasattr(str, 'toLower') else (data.get('email') or '').strip().lower()
+        email = (data.get('email') or '').strip().lower()
         code = (data.get('code') or '').strip()
         if not email or not code:
             return jsonify({'error': 'Email and code are required'}), 400
@@ -474,6 +474,11 @@ def reset_password_with_code():
         supabase.table('users').update({'password_hash': password_hash}).eq('id', entry['user_id']).execute()
         # Mark code used
         supabase.table('password_resets').update({'used': True}).eq('id', entry['id']).execute()
+        # Invalidate any other active codes for this email to prevent reuse
+        try:
+            supabase.table('password_resets').update({'used': True}).eq('email', email).eq('used', False).execute()
+        except Exception:
+            pass
         return jsonify({'message': 'Password updated successfully'}), 200
     except Exception as e:
         logger.error(f"reset_password_with_code error: {e}")
