@@ -823,16 +823,7 @@ def update_article(article_id):
         }).eq('uuid', article_id).execute()
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
-
-        # Emit real-time update with all relevant fields
-        updated = supabase.table('articles').select('uuid, views, timestamp').eq('uuid', article_id).single().execute()
-        if updated.data:
-            socketio.emit('article_update', {
-                'id': article_id,
-                'views': updated.data.get('views', 0),
-                'timestamp': updated.data.get('timestamp')
-            })
-
+        socketio.emit('article_updated', {'article': {'id': article_id}})
         return jsonify({'article': {'id': article_id}}), 200
     except Exception as e:
         logger.error(f"Error updating article {article_id}: {str(e)}")
