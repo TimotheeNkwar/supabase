@@ -1678,7 +1678,7 @@ def track_view(article_id):
         new_views = result.data.get('views', 0)
         new_timestamp = result.data.get('timestamp')
         socketio.emit('article_update', {
-            'id': article_id,
+            'uuid': article_id,
             'views': new_views,
             'timestamp': new_timestamp
         })
