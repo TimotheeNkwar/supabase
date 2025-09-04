@@ -391,7 +391,6 @@ def reset_password_with_code():
         if len(new_password) < 8:
             return jsonify({'error': 'Password must be at least 8 characters'}), 400
         # Verify latest valid code (not used, not expired within 5 minutes)
-        now_iso = datetime.now(timezone.utc).isoformat()
         res = supabase.table('password_resets').select('id, user_id, email, code, expires_at, used').eq('email', email).eq('code', code).eq('used', False).order('created_at', desc=True).limit(1).execute()
         entry = (res.data or [None])[0]
         if not entry:
