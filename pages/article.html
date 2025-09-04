@@ -564,22 +564,29 @@
             hljs.configure({ languages: ['python', 'javascript', 'sql'] });
             hljs.highlightAll();
 
-            // Real-time view count
+            // Real-time view count: trigger server-side increment via HTTP
             let viewTracked = false;
             const socket = io.connect(`${window.location.protocol}//${document.domain}:${location.port}`, {
                 transports: ['websocket', 'polling'],
                 timeout: 5000
             });
 
-            socket.on('connect', () => {
-                console.log('Socket.IO connected');
-                if (!viewTracked) {
-                    setTimeout(() => {
-                        socket.emit('track_view', { article_id: "{{ article.id | default('unknown', true) }}" });
+            // Trigger HTTP POST to increment view count once after load
+            if (!viewTracked) {
+                setTimeout(async () => {
+                    try {
+                        const res = await fetch(`/api/track-view/{{ article.id | default('unknown', true) }}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        const data = await res.json();
+                        console.debug('View tracked via HTTP:', data);
                         viewTracked = true;
-                    }, 3000);
-                }
-            });
+                    } catch (e) {
+                        console.warn('Failed to track view via HTTP', e);
+                    }
+                }, 2000);
+            }
 
             socket.on('article_update', (data) => {
                 if (data.id === "{{ article.id | default('unknown', true) }}") {
