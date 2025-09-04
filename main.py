@@ -15,7 +15,6 @@ from pathlib import Path
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 from flask import Flask, request, render_template, jsonify, redirect, url_for, flash, session, send_from_directory, \
     Blueprint
-from flask_socketio import SocketIO
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_cors import CORS
 from flask_limiter import Limiter
@@ -27,13 +26,10 @@ from pymongo import MongoClient
 import markdown2
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
-from articles_data import articles_metadata
-from database import get_db_connection
 import uuid
 from sklearn.preprocessing import StandardScaler
 import google.generativeai as genai
 from urllib.parse import urlparse
-import pymysql
 from google.generativeai import configure as genai_configure, embed_content, GenerativeModel
 import random
 from flask import Flask, Response
@@ -62,7 +58,6 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif','webp','svg'}
 
 # Initialize extensions
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 limiter = Limiter(
     key_func=get_remote_address,
@@ -791,7 +786,6 @@ def create_article():
             'content': data.get('content', ''),
             'created_by': current_user.id
         }).execute()
-        socketio.emit('article_updated', {'article': {'id': article_id}})
         return jsonify({'article': {'id': article_id}}), 201
     except Exception as e:
         logger.error(f"Error creating article: {str(e)}")
@@ -841,7 +835,6 @@ def update_article(article_id):
         }).eq('uuid', article_id).execute()
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
-        socketio.emit('article_updated', {'article': {'id': article_id}})
         return jsonify({'article': {'id': article_id}}), 200
     except Exception as e:
         logger.error(f"Error updating article {article_id}: {str(e)}")
@@ -857,7 +850,6 @@ def delete_article(article_id):
         result = supabase.table('articles').delete().eq('id', article_id).execute()
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
-        socketio.emit('article_deleted', {'articleId': article_id})
         return jsonify({'message': 'Article deleted'}), 200
     except Exception as e:
         logger.error(f"Error deleting article {article_id}: {str(e)}")
@@ -876,7 +868,6 @@ def toggle_article_visibility(article_id):
         result = supabase.table('articles').update({'hidden': hidden}).eq('uuid', article_id).execute()
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
-        socketio.emit('article_visibility_changed', {'articleId': article_id, 'hidden': hidden})
         return jsonify({'message': 'Visibility toggled'}), 200
     except Exception as e:
         logger.error(f"Error toggling visibility for article {article_id}: {str(e)}")
@@ -1694,36 +1685,7 @@ def serve_static(filename):
 
 
 
-@socketio.on('track_view')
-def handle_track_view(data):
-    article_id = data.get('article_id')
-    if not article_id:
-        logger.error("No article_id provided in track_view event")
-        return
-    try:
-        response = supabase.table('articles').select('views').eq('uuid', article_id).single().execute()
-        if not response.data:
-            logger.error(f"Article not found for id: {article_id}")
-            return
-        current_views = response.data.get('views', 0)
-        supabase.table('articles').update({'views': current_views + 1}).eq('uuid', article_id).execute()
-        result = supabase.table('articles').select('views').eq('uuid', article_id).single().execute()
-        new_views = result.data.get('views', 0)
-        socketio.emit('article_update', {'id': article_id, 'views': new_views})
-        logger.info(f"Tracked view for article {article_id}, new views: {new_views}")
-    except Exception as e:
-        logger.error(f"Error tracking view for article {article_id}: {str(e)}", exc_info=True)
 
-
-
-@socketio.on('connect')
-def handle_connect():
-    logger.info('Client connected')
-
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    logger.info('Client disconnected')
 
 
 # Custom rate limit exceeded response
@@ -1738,15 +1700,12 @@ def rate_limit_exceeded():
 app.register_blueprint(api, url_prefix='/api')
 
 if __name__ == '__main__':
-    try:
-        socketio.run(
-            app,
-            debug=os.getenv('FLASK_DEBUG', 'true').lower() == 'true',
-            use_reloader=True,
-            host=os.getenv('FLASK_HOST', '0.0.0.0'),
-            port=int(os.getenv('FLASK_PORT', 5000))
-        )
-    except Exception as e:
-        logger.critical(f"Failed to start application: {str(e)}")
+    logger.info("Starting Flask application...")
+    app.run(
+        debug=os.getenv('FLASK_DEBUG', 'true').lower() == 'true',
+        use_reloader=True,
+        host=os.getenv('FLASK_HOST', '0.0.0.0'),
+        port=int(os.getenv('FLASK_PORT', 5000))
+    )
 
 
