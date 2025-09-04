@@ -403,7 +403,10 @@ def request_password_reset():
             'email': email,
             'code': code,
             # explicit 5-min expiry to match validation below
-            'expires_at': (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()
+            'expires_at': (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
+            'requested_at': datetime.now(timezone.utc).isoformat(),
+            'ip_address': get_remote_address(),
+            'user_agent': request.headers.get('User-Agent', '')
         }).execute()
         # Send email with the code
         send_email(

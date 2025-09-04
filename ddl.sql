@@ -37,7 +37,10 @@ CREATE TABLE IF NOT EXISTS password_resets (
     code VARCHAR(6) NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '5 minutes'),
     used BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    ip_address TEXT,
+    user_agent TEXT
 );
 
 -- Fast lookup by email+code and automatic expiry
