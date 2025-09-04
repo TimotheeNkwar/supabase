@@ -29,3 +29,19 @@ CREATE TABLE articles (
 );
 
 
+-- Table for password reset codes with 5-minute expiry
+CREATE TABLE IF NOT EXISTS password_resets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    code VARCHAR(6) NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '5 minutes'),
+    used BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Fast lookup by email+code and automatic expiry
+CREATE INDEX IF NOT EXISTS idx_password_resets_email_code ON password_resets (email, code) WHERE used = FALSE;
+CREATE INDEX IF NOT EXISTS idx_password_resets_expires_at ON password_resets (expires_at);
+
+

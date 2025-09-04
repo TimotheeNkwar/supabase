@@ -348,6 +348,71 @@ def load_model(model_type: str) -> Optional[Union[object]]:
 
 # API Blueprint
 api = Blueprint('api', __name__)
+@api.route('/auth/request-reset', methods=['POST'])
+@limiter.limit("5 per minute")
+def request_password_reset():
+    try:
+        data = request.get_json(silent=True) or {}
+        email = (data.get('email') or '').strip().lower()
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+        # Find user
+        resp = supabase.table('users').select('id, username').eq('username', email).single().execute()
+        user = resp.data
+        if not user:
+            # Do not leak existence
+            return jsonify({'message': 'If the account exists, a code was sent.'}), 200
+        # Generate 6-digit code
+        code = f"{random.randint(0, 999999):06d}"
+        # Store reset entry
+        supabase.table('password_resets').insert({
+            'user_id': user['id'],
+            'email': email,
+            'code': code,
+            'expires_at': datetime.now(timezone.utc).isoformat()
+        }).execute()
+        # TODO: send email via your provider; for now, log
+        logger.info(f"Password reset code for {email}: {code}")
+        return jsonify({'message': 'If the account exists, a code was sent.'}), 200
+    except Exception as e:
+        logger.error(f"request_password_reset error: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@api.route('/auth/reset-password', methods=['POST'])
+@limiter.limit("5 per minute")
+def reset_password_with_code():
+    try:
+        data = request.get_json(silent=True) or {}
+        email = (data.get('email') or '').strip().lower()
+        code = (data.get('code') or '').strip()
+        new_password = data.get('new_password') or ''
+        if not email or not code or not new_password:
+            return jsonify({'error': 'Email, code and new_password are required'}), 400
+        if len(new_password) < 8:
+            return jsonify({'error': 'Password must be at least 8 characters'}), 400
+        # Verify latest valid code (not used, not expired within 5 minutes)
+        now_iso = datetime.now(timezone.utc).isoformat()
+        res = supabase.table('password_resets').select('id, user_id, email, code, expires_at, used').eq('email', email).eq('code', code).eq('used', False).order('created_at', desc=True).limit(1).execute()
+        entry = (res.data or [None])[0]
+        if not entry:
+            return jsonify({'error': 'Invalid code'}), 400
+        # Check expiry manually if needed
+        try:
+            expires_at = datetime.fromisoformat(str(entry.get('expires_at')).replace('Z', '+00:00'))
+        except Exception:
+            expires_at = datetime.now(timezone.utc)
+        if datetime.now(timezone.utc) > expires_at + timedelta(minutes=5):
+            return jsonify({'error': 'Code expired'}), 400
+        # Update password
+        salt = bcrypt.gensalt()
+        password_hash = bcrypt.hashpw(new_password.encode('utf-8'), salt).decode('utf-8')
+        supabase.table('users').update({'password_hash': password_hash}).eq('id', entry['user_id']).execute()
+        # Mark code used
+        supabase.table('password_resets').update({'used': True}).eq('id', entry['id']).execute()
+        return jsonify({'message': 'Password updated successfully'}), 200
+    except Exception as e:
+        logger.error(f"reset_password_with_code error: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 # Other routes
 @app.route('/favicon.ico')
@@ -756,6 +821,7 @@ def get_article(article_id):
     except Exception as e:
         logger.error(f"Error fetching article {article_id}: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
+
 
 
 @api.route('/articles', methods=['POST'])
