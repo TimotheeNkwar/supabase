@@ -191,7 +191,7 @@
       });
 
       try {
-        this.showToast('Chargement des articles...', { autoHide: true, timeout: 800 });
+        this.showToast('Loading articles...', { autoHide: true, timeout: 800 });
         const res = await fetch(`${API_CONFIG.baseUrl}?${qs.toString()}`, {
           headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -212,10 +212,10 @@
         this.renderArticles(data.articles || []);
         this.updatePagination(data, page);
         currentPage = page;
-        this.showToast('Articles chargés', { type: 'success', autoHide: true, timeout: 1000 });
+        this.showToast('Loaded items', { type: 'success', autoHide: true, timeout: 1000 });
       } catch (err) {
         console.error('Error loading articles:', err);
-        this.showToast(`Impossible de charger les articles: ${err.message}`, { type: 'error' });
+        this.showToast(`Unable to load items: ${err.message}`, { type: 'error' });
       }
     }
 
