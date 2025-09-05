@@ -937,26 +937,41 @@ def get_articles():
 
 @api.route('/articles/<article_id>', methods=['GET'])
 def get_article(article_id):
-
-    """Get an article by its uuid.
+    """Get an article by its ID or UUID.
 
     Args:
-        article_id (str): The uuid of the article to fetch.
+        article_id (str): The numeric ID or UUID of the article to fetch.
 
     Returns:
         A JSON object containing the article's data, or a 404 error if the article is not found.
     """
-
     try:
-        # --- SUPABASE IMPLEMENTATION ---
-        response = supabase.table('articles').select(
-            'id, uuid, title, category, hidden, description, tags, image, read_time, content'
-        ).eq('uuid', article_id).single().execute()
-        article = response.data
+        # First try to find by numeric ID if the input is a number
+        if article_id.isdigit():
+            response = supabase.table('articles').select(
+                'id, uuid, title, category, hidden, description, tags, image, read_time, content'
+            ).eq('id', int(article_id)).execute()
+            
+            if response.data and len(response.data) > 0:
+                article = response.data[0]
+            else:
+                # If not found by numeric ID, try UUID
+                response = supabase.table('articles').select(
+                    'id, uuid, title, category, hidden, description, tags, image, read_time, content'
+                ).eq('uuid', article_id).execute()
+                article = response.data[0] if response.data and len(response.data) > 0 else None
+        else:
+            # Try UUID directly if input is not a number
+            response = supabase.table('articles').select(
+                'id, uuid, title, category, hidden, description, tags, image, read_time, content'
+            ).eq('uuid', article_id).execute()
+            article = response.data[0] if response.data and len(response.data) > 0 else None
+
         if not article:
             return jsonify({'error': 'Article not found'}), 404
+            
         return jsonify({
-            'id': article.get('uuid') or article.get('id'),
+            'id': article.get('uuid') or str(article.get('id')),
             'title': article.get('title'),
             'category': article.get('category'),
             'hidden': article.get('hidden'),
@@ -966,6 +981,7 @@ def get_article(article_id):
             'read_time': article.get('read_time'),
             'content': article.get('content')
         }), 200
+        
     except Exception as e:
         logger.error(f"Error fetching article {article_id}: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
