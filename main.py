@@ -87,35 +87,45 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 
 # --- Email helper ---
-def send_email(to_email: str, subject: str, body: str) -> bool:
-    try:
-        host = os.getenv('EMAIL_HOST')
-        port = int(os.getenv('EMAIL_PORT'))
-        user = os.getenv('EMAIL_USER')
-        password = os.getenv('EMAIL_PASS')
-        from_email = os.getenv('EMAIL_FROM')
+class EmailService:
+    def __init__(self):
+        self.host = os.getenv('EMAIL_HOST')
+        self.port = int(os.getenv('EMAIL_PORT'))
+        self.user = os.getenv('EMAIL_USER')
+        self.password = os.getenv('EMAIL_PASS')
+        self.from_email = os.getenv('EMAIL_FROM')
 
-        if not all([host, port, user, password, from_email]):
-            logger.warning('Email not sent: SMTP env vars not fully configured')
+    def send_email(self, to_email: str, subject: str, body: str, is_html: bool = False) -> bool:
+        """Helper function to send plain text emails."""
+        try:
+            if not all([self.host, self.port, self.user, self.password, self.from_email]):
+                logger.warning('Email not sent: SMTP env vars not fully configured')
+                return False
+
+            msg = EmailMessage()
+            msg['Subject'] = subject
+            msg['From'] = self.from_email
+            msg['To'] = to_email
+            if is_html:
+                msg.add_alternative(body, subtype='html')
+            else:
+                msg.set_content(body)
+
+            with smtplib.SMTP(self.host, self.port) as server:
+                server.starttls()
+                server.login(self.user, self.password)
+                server.send_message(msg)
+
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send email to {to_email}: {e}")
             return False
 
-        msg = EmailMessage()
-        msg['Subject'] = subject
-        msg['From'] = from_email
-        msg['To'] = to_email
-        msg.set_content(body)
+email_service = EmailService()
 
-        with smtplib.SMTP(host, port) as server:
-            server.starttls()
-            server.login(user, password)
-            server.send_message(msg)
-
-        return True
-    except Exception as e:
-        logger.error(f"Failed to send email to {to_email}: {e}")
-        return False
-
-
+def send_email(to_email: str, subject: str, body: str) -> bool:
+    """Helper function to send plain text emails."""
+    return email_service.send_email(to_email, subject, body, is_html=False)
 
 
 @app.route("/robots.txt")
