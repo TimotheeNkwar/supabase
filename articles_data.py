@@ -398,4 +398,5 @@ articles_metadata = {
             Fourier transforms and wavelet decomposition provide powerful tools for time series feature extraction, enabling more accurate predictive models.
         '''
     }
+
 }
