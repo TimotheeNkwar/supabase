@@ -467,6 +467,8 @@ def verify_password_reset_code():
         logger.error(f"verify_password_reset_code error: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
+
+
 @api.route('/auth/reset-password', methods=['POST'])
 @limiter.limit("5 per minute")
 def reset_password_with_code():
