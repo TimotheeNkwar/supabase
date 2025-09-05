@@ -201,11 +201,11 @@
           </td>
           <td class="p-3">
             <div class="flex gap-2">
-              <button class="btn btn-sm btn-primary" data-action="edit" data-id="${this.escapeHtml(article.id)}">Éditer</button>
+              <button class="btn btn-sm btn-primary" data-action="edit" data-id="${this.escapeHtml(article.id)}">Edit</button>
               <button class="btn btn-sm btn-outline" data-action="toggle" data-id="${this.escapeHtml(article.id)}" data-hidden="${!!article.hidden}">
                 ${article.hidden ? 'Show' : 'Hide'}
               </button>
-              <button class="btn btn-sm btn-danger" data-action="delete" data-id="${this.escapeHtml(article.id)}">Supprimer</button>
+              <button class="btn btn-sm btn-danger" data-action="delete" data-id="${this.escapeHtml(article.id)}">Delete</button>
             </div>
           </td>
         `;
