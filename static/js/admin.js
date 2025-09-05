@@ -196,7 +196,7 @@
           <td class="p-3">${this.escapeHtml(article.category || '—')}</td>
           <td class="p-3">
             <span class="px-2 py-1 rounded-full text-sm ${article.hidden ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}">
-              ${article.hidden ? 'Masqué' : 'Visible'}
+              ${article.hidden ? 'Hide' : 'Visible'}
             </span>
           </td>
           <td class="p-3">
