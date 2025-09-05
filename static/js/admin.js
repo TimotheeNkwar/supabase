@@ -304,11 +304,11 @@
     async handleFormSubmit() {
       if (!this.fieldId || !this.fieldTitle || !this.submitBtn) {
         console.error('Form field ID or title missing');
-        this.showToast('Erreur: éléments du formulaire manquants', { type: 'error' });
+        this.showToast('Error: Missing form elements', { type: 'error' });
         return;
       }
       if (isSubmitting) {
-        this.showToast('Soumission en cours, veuillez patienter', { type: 'info' });
+        this.showToast('Submission in progress, please wait', { type: 'info' });
         return;
       }
 
@@ -324,22 +324,22 @@
       };
 
       if (!payload.title) {
-        this.showToast('Le titre est requis', { type: 'error' });
+        this.showToast('Title is required', { type: 'error' });
         return;
       }
       if (payload.read_time <= 0) {
-        this.showToast('Le temps de lecture doit être positif', { type: 'error' });
+        this.showToast('Reading time should be positive', { type: 'error' });
         return;
       }
 
       isSubmitting = true;
       this.submitBtn.disabled = true;
-      this.submitBtn.textContent = id ? 'Update...' : 'Création...';
+      this.submitBtn.textContent = id ? 'Update...' : 'Creation...';
 
       try {
         const url = id ? `${API_CONFIG.baseUrl}/${id}` : API_CONFIG.baseUrl;
         const method = id ? 'PUT' : 'POST';
-        this.showToast(id ? 'Mise à jour de l\'article...' : 'Création de l\'article...', { autoHide: true, timeout: 800 });
+        this.showToast(id ? 'Updated the article...' : 'Creation of the article...', { autoHide: true, timeout: 800 });
         const res = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -347,7 +347,7 @@
           credentials: 'include'
         });
         if (res.status === 401) {
-          this.showToast('Veuillez vous connecter', { type: 'error' });
+          this.showToast('Please log in', { type: 'error' });
           window.location.href = '/login';
           return;
         }
@@ -358,11 +358,11 @@
         const result = await res.json();
         if (socket) socket.emit('article_updated', { article: result.article || result });
         this.closeEditModal();
-        this.showToast(id ? 'Article mis à jour' : 'Article créé', { type: 'success', autoHide: true, timeout: 1000 });
+        this.showToast(id ? 'Article updated' : 'Article created', { type: 'success', autoHide: true, timeout: 1000 });
         await this.loadArticles(currentPage);
       } catch (e) {
         console.error('Error saving article:', e);
-        this.showToast(`Échec de la sauvegarde: ${e.message}`, { type: 'error' });
+        this.showToast(`Backup failed: ${e.message}`, { type: 'error' });
       } finally {
         isSubmitting = false;
         if (this.submitBtn) {
@@ -374,11 +374,11 @@
 
     async toggleVisibility(articleId, currentlyHidden) {
       if (!articleId) {
-        this.showToast('Identifiant d\'article manquant', { type: 'error' });
+        this.showToast('Missing item ID', { type: 'error' });
         return;
       }
       try {
-        this.showToast('Mise à jour de la visibilité...', { autoHide: true, timeout: 800 });
+        this.showToast('Visibility update...', { autoHide: true, timeout: 800 });
         const res = await fetch(`${API_CONFIG.baseUrl}/${articleId}/toggle-visibility`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -386,7 +386,7 @@
           credentials: 'include'
         });
         if (res.status === 401) {
-          this.showToast('Veuillez vous connecter', { type: 'error' });
+          this.showToast('Please log in', { type: 'error' });
           window.location.href = '/login';
           return;
         }
@@ -395,7 +395,7 @@
           throw new Error(`Erreur HTTP ${res.status}: ${errorText}`);
         }
         if (socket) socket.emit('article_visibility_changed', { articleId });
-        this.showToast('Visibilité mise à jour', { type: 'success', autoHide: true, timeout: 1000 });
+        this.showToast('Visibility updated', { type: 'success', autoHide: true, timeout: 1000 });
         await this.loadArticles(currentPage);
       } catch (e) {
         console.error('Error toggling visibility:', e);
