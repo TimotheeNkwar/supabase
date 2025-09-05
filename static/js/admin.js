@@ -1,6 +1,6 @@
 // admin.js — gestion articles pour /admin avec modal
 (() => {
-  const API_CONFIG = { perPage: 5, baseUrl: '/api/articles' };
+  const API_CONFIG = { perPage: 10, baseUrl: '/api/articles' };
 
   let currentPage = 1;
   let socket = null;
