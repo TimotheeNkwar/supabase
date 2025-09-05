@@ -19,8 +19,8 @@
   /* Dark mode colors */
   --dark-bg-primary: #111827;
   --dark-bg-secondary: #1f2937;
-  --dark-text-primary: #f9fafb;
-  --dark-text-secondary: #d1d5db;
+  --dark-text-primary: #02203f;
+  --dark-text-secondary: #021c42;
   --dark-border: #374151;
   --dark-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
 }
