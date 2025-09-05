@@ -3,8 +3,8 @@ eventlet.monkey_patch()
 import os
 import time
 import json
-import logging
-from datetime import datetime, timedelta
+import secrets
+from datetime import datetime, timedelta, timezone
 import pytz
 import numpy as np
 import pandas as pd
@@ -86,424 +86,239 @@ SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')  # Clé de service
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 
-# --- Email helper ---
+# --- Email helper (compléter la classe) ---
 class EmailService:
     def __init__(self):
         self.host = os.getenv('EMAIL_HOST')
-        self.port = int(os.getenv('EMAIL_PORT'))
+        self.port = int(os.getenv('EMAIL_PORT', '587'))
         self.user = os.getenv('EMAIL_USER')
-        self.password = os.getenv('EMAIL_PASS')
-        self.from_email = os.getenv('EMAIL_FROM')
+        self.password = os.getenv('EMAIL_PASSWORD')
+        self.from_addr = os.getenv('EMAIL_FROM', self.user or 'no-reply@example.com')
+        self.use_tls = os.getenv('EMAIL_USE_TLS', 'true').lower() == 'true'
 
-    def send_email(self, to_email: str, subject: str, body: str, is_html: bool = False) -> bool:
-        """Helper function to send plain text emails."""
-        try:
-            if not all([self.host, self.port, self.user, self.password, self.from_email]):
-                logger.warning('Email not sent: SMTP env vars not fully configured')
-                return False
+    def send_reset_code(self, to_email: str, code: str):
+        # Gabarit d'email simple
+        subject = "Votre code de réinitialisation de mot de passe"
+        text = (
+            f"Bonjour,\n\n"
+            f"Voici votre code de réinitialisation: {code}\n"
+            f"Il expirera dans 15 minutes.\n\n"
+            f"Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.\n"
+            f"Cordialement."
+        )
 
-            msg = EmailMessage()
-            msg['Subject'] = subject
-            msg['From'] = self.from_email
-            msg['To'] = to_email
-            if is_html:
-                msg.add_alternative(body, subtype='html')
-            else:
-                msg.set_content(body)
+        msg = EmailMessage()
+        msg['From'] = self.from_addr
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.set_content(text)
 
-            with smtplib.SMTP(self.host, self.port) as server:
-                server.starttls()
-                server.login(self.user, self.password)
-                server.send_message(msg)
+        with smtplib.SMTP(self.host, self.port) as smtp:
+            if self.use_tls:
+                smtp.starttls()
+            if self.user and self.password:
+                smtp.login(self.user, self.password)
+            smtp.send_message(msg)
 
-            return True
-        except Exception as e:
-            logger.error(f"Failed to send email to {to_email}: {e}")
-            return False
 
 email_service = EmailService()
 
-def send_email(to_email: str, subject: str, body: str) -> bool:
-    """Helper function to send plain text emails."""
-    return email_service.send_email(to_email, subject, body, is_html=False)
 
+# --- Helpers sécurité/validation ---
 
-@app.route("/robots.txt")
-def robots():
-    
+RESET_CODE_TTL_MINUTES = int(os.getenv('RESET_CODE_TTL_MINUTES', '15'))
+RESET_CODE_LENGTH = int(os.getenv('RESET_CODE_LENGTH', '6'))
 
-    """
-    Returns the contents of the robots.txt file.
-
-    This function responds to HTTP requests for the /robots.txt path and returns a
-    plain text response with the contents of the robots.txt file. The response is
-    cached for 24 hours.
-
-    :return: A plain text response with the contents of the robots.txt file.
-    """
-
-    return Response("User-agent: *\nDisallow:", mimetype="text/plain")
-
-# Custom Jinja filters
-def custom_markdown(text):
-    return markdown2.markdown(text, extras=["fenced-code-blocks", "tables", "spoiler", "header-ids", "code-friendly",
-                                            "pyshell", "markdown-in-html", "footnotes", "cuddled-lists"])
-
-
-def datetimeformat(value, format='%d/%m/%Y %H:%M'):
-
-    """
-    Format a datetime object or string in a custom format.
-
-    If the value is `None`, return an empty string. If the value is a string, attempt to parse it as a datetime object.
-    If parsing fails, return the original string.
-
-    The format string is passed to `strftime` to format the datetime object. Default format is '%d/%m/%Y %H:%M'.
-    """
-
-    if value is None:
-        return ''
-    if isinstance(value, str):
-        try:
-            if 'T' in value:
-                value = datetime.fromisoformat(value.replace('Z', '+00:00'))
-            else:
-                value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-        except (ValueError, TypeError):
-            return value
-    return value.strftime(format)
-
-
-app.jinja_env.filters['datetimeformat'] = datetimeformat
-app.jinja_env.filters['custom_markdown'] = custom_markdown
-app.jinja_env.filters['format_views'] = lambda v: f"{(v / 1000):.1f}K views" if v >= 1000 else f"{v} view{'s' if v != 1 else ''}"
-
-# User class for Flask-Login
-class User(UserMixin):
-    def __init__(self, id, username):
-        self.id = id
-        self.username = username
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    try:
-        response = supabase.table('users').select('id, username').eq('id', int(user_id)).single().execute()
-        user_data = response.data
-        if user_data:
-            return User(id=user_data['id'], username=user_data['username'])
-    except Exception as e:
-        logger.error(f"Error loading user {user_id}: {str(e)}")
-    return None
-
-def get_client_ip(request):
-
-    """
-    Returns the client's IP address.
-
-    The client's IP address can be retrieved from the request object's
-    `remote_addr` attribute. However, if the request is behind a proxy,
-    the `X-Forwarded-For` header should be used instead.
-
-    :param request: The request object.
-    :return: The client's IP address as a string.
-    """
-    if request.headers.get("X-Forwarded-For"):
-        ip = request.headers.get("X-Forwarded-For").split(",")[0].strip()
-    else:
-        ip = request.remote_addr or "127.0.0.1"
-    return ip
-
- 
-
-def format_views(views):
-    if views >= 1000:
-        return f"{(views / 1000):.1f}K views"
-    return f"{views} view{'s' if views != 1 else ''}"
-
-
-
-
+def normalize_email(email: str) -> str:
+    return (email or '').strip().lower()
 
 # --- Identifier helpers ---
-def is_valid_uuid(value: str) -> bool:
+def is_valid_email(email: str) -> bool:
+    # Regex simple, à ajuster selon ton besoin
+    return bool(re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", email or ""))
+
+def generate_reset_code(length: int = RESET_CODE_LENGTH) -> str:
+    if length < 4 or length > 10:
+        length = 6
+    # Code numérique, facile à saisir
+    return f"{secrets.randbelow(10 ** length):0{length}d}"
+
+def hash_code(code: str) -> str:
+    # Hash du code pour ne pas stocker le code en clair
+    return bcrypt.hashpw(code.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_code(code: str, code_hash: str) -> bool:
     try:
-        return str(uuid.UUID(str(value))) == str(value)
+        return bcrypt.checkpw(code.encode('utf-8'), code_hash.encode('utf-8'))
     except Exception:
         return False
 
-def get_local_time_from_ip(ip):
+def utcnow_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
-    """
-    Récupère le fuseau horaire et l'heure exacte selon l'IP.
+def in_future_iso(minutes: int) -> str:
+    return (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat()
 
-    :param ip: L'adresse IP
-    :return: Un tuple contenant le fuseau horaire (par exemple "Europe/Paris")
-             et l'heure exacte (par exemple "2025-08-28T17:22:34.123456+03:00")
-    """
 
+# --- Supabase helpers ---
+
+def get_user_by_email(email: str):
+    # Adapte le nom de table/colonnes si nécessaire
+    resp = supabase.table('users').select('id').eq('email', email).limit(1).execute()
+    data = (resp.data or [])
+    return data[0] if data else None
+
+def delete_existing_reset_records(email: str):
+    supabase.table('password_resets').delete().eq('email', email).eq('used', False).execute()
+
+def insert_reset_record(email: str, code_hash: str, expires_at_iso: str):
+    payload = {
+        "email": email,
+        "code_hash": code_hash,
+        "expires_at": expires_at_iso,
+        "used": False,
+        "attempt_count": 0,
+        "created_at": utcnow_iso(),
+    }
+    supabase.table('password_resets').insert(payload).execute()
+
+def get_active_reset_record(email: str):
+    # Récupère le plus récent non utilisé et non expiré
+    now_iso = utcnow_iso()
+    resp = (
+        supabase.table('password_resets')
+        .select('id,email,code_hash,expires_at,used,attempt_count,created_at')
+        .eq('email', email)
+        .eq('used', False)
+        .gt('expires_at', now_iso)
+        .order('created_at', desc=True)
+        .limit(1)
+        .execute()
+    )
+
+    data = (resp.data or [])
+    return data[0] if data else None
+
+def mark_reset_used(record_id: str):
+    supabase.table('password_resets').update({"used": True, "used_at": utcnow_iso()}).eq('id', record_id).execute()
+
+
+def increment_attempt(record_id: str):
+    # Incrémente atomiquement attempt_count (façon simple)
+    resp = supabase.table('password_resets').select('attempt_count').eq('id', record_id).limit(1).execute()
+    cur = ((resp.data or [{}])[0].get('attempt_count') or 0) + 1
+    supabase.table('password_resets').update({"attempt_count": cur}).eq('id', record_id).execute()
+
+def update_user_password(user_id: str, new_password: str):
+    pwd_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    # Adapte la colonne si besoin (ex: "password_hash" ou "password")
+    supabase.table('users').update({"password_hash": pwd_hash, "updated_at": utcnow_iso()}).eq('id', user_id).execute()
+
+
+# --- Rate limiting + routes ---
+
+@app.post('/api/auth/request-reset')
+@limiter.limit('5 per hour')
+def api_request_reset():
     try:
-        # Récupérer timezone depuis ipinfo.io
-        res = requests.get(f"http://ipinfo.io/{ip}/json", timeout=2).json()
-        tz = res.get("timezone", "UTC")
+        payload = request.get_json(force=True, silent=True) or {}
+        email = normalize_email(payload.get('email'))
+        if not is_valid_email(email):
+            return jsonify({"error": "Email invalide"}), 400
 
-        # Obtenir l'heure exacte via worldtimeapi
-        time_res = requests.get(f"http://worldtimeapi.org/api/timezone/{tz}", timeout=2).json()
-        local_time = time_res.get("datetime")
+        # Vérification utilisateur sans divulguer l'existence
+        user = get_user_by_email(email)
 
-        if not local_time:
-            local_time = datetime.now(timezone.utc).isoformat()
+        # Génère et stocke le code uniquement si l'utilisateur existe,
+        # mais répond pareil dans tous les cas pour éviter l'énumération
+        if user:
+            try:
+                delete_existing_reset_records(email)
+                code = generate_reset_code()
+                code_hash = hash_code(code)
+                expires_at = in_future_iso(RESET_CODE_TTL_MINUTES)
+                insert_reset_record(email, code_hash, expires_at)
 
-        return tz, local_time
-    except Exception:
-        return "UTC", datetime.now(timezone.utc).isoformat()
+                # Envoi email
+                email_service.send_reset_code(email, code)
+            except Exception as e:
+                # On loggue l'erreur mais on renvoie quand même un message générique
+                logger.warning(f"request-reset: échec traitement interne pour {email}: {e}")
 
-
-
-@app.route('/python-demo', methods=['GET'])
-def python_demo():
-    """
-    Render the Python Demo page with an interactive code example.
-    """
-    logger.info("Rendering Python Demo page")
-    try:
-        # Sample data for the demo (mirroring the JavaScript example)
-
-
-        # define a seed for reproducibility
-        np.random.seed(42)
-
-        # number of customers
-        num_customers = 1000
-
-        # Générer des données
-        recency = np.random.randint(2, 46, size=num_customers)  # Recency between 2 and 45
-        frequency = np.random.randint(3, 21, size=num_customers)  # Frequency entre 3 et 20
-        avg_order_value = np.full(num_customers, 100)  # Valeur constante à 100
-        monetary = frequency * avg_order_value  # Monetary = frequency * avg_order_value
-        orders = frequency  # Orders is the same as frequency
-
-        # Créer un DataFrame
-        sample_data = {
-            'recency': recency,
-            'frequency': frequency,
-            'monetary': monetary,
-            'orders': orders,
-            'avg_order_value': avg_order_value
-        }
-
-       
-        df = pd.DataFrame(sample_data)
-        df['total_spent'] = df['orders'] * df['avg_order_value']
-        scaler = StandardScaler()
-        features = ['recency', 'frequency', 'monetary']
-        scaled_features = scaler.fit_transform(df[features])
-        result = {
-            'high_value': len(df[df['total_spent'] > df['total_spent'].quantile(0.8)]),
-            'avg_clv': df['total_spent'].mean(),
-            'retention_rate': (df['recency'] < 30).mean() * 100
-        }
-
-        return render_template('python_demo.html', sample_data=sample_data, result=result)
+        # Réponse générique
+        return jsonify({"message": "Si un compte existe pour cet email, un code a été envoyé."})
     except Exception as e:
-        logger.error(f"Error rendering Python Demo page: {str(e)}")
-        return render_template('500.html', message=str(e)), 500
+        logger.exception(f"request-reset: erreur: {e}")
+        return jsonify({"error": "Erreur serveur"}), 500
 
 
-# Model and data handling
-models: Dict[str, Optional[Union[object]]] = {
-    'churn': None,
-    'recommendation': None,
-    'matrix': None,
-    'price_optimizer': None
-}
-model_lock = Semaphore()
-
-MODEL_FILES = {
-    'churn': 'models_trains/random_forest_model.pkl'
-}
-
-DATA_FILES = {
-    'retail_price': 'datasets/retail_price.csv',
-    'movies': 'datasets/movies.csv'
-}
-
-datasets = {
-    'retail_price': None,
-    'movies': None
-}
-
-
-
-def initialize_models():
-    for model_type in models:
-        try:
-            load_model(model_type)
-        except Exception as e:
-            logger.error(f"Failed to initialize {model_type} model at startup: {str(e)}")
-
-
-
-def load_model(model_type: str) -> Optional[Union[object]]:
-
-    """
-    Load a model from file.
-
-    Args:
-        model_type (str): Model type to load.
-
-    Returns:
-        Optional[Union[object]]: Loaded model, or None on error.
-
-    Raises:
-        ValueError: If model type is unknown.
-        IOError: If model file is not found.
-    """
-
-    if model_type not in models:
-        logger.error(f"Invalid model type: {model_type}")
-        raise ValueError(f"Unknown model type: {model_type}")
-    if model_type not in MODEL_FILES:
-        logger.error(f"No model file defined for model type: {model_type}")
-        raise ValueError(f"No model file defined for model type: {model_type}")
-    with model_lock:
-        if models[model_type] is not None:
-            logger.debug(f"{model_type.capitalize()} model already loaded from cache")
-            return models[model_type]
-        try:
-            local_file = MODEL_FILES[model_type]
-            logger.info(f"Loading {model_type} model from {local_file}")
-            if not os.path.exists(local_file):
-                logger.error(f"Model file not found: {local_file}")
-                raise IOError(f"Model file not found: {local_file}")
-            models[model_type] = joblib.load(local_file)
-            logger.info(f"{model_type.capitalize()} model loaded successfully from {local_file}")
-            return models[model_type]
-        except (IOError, joblib.JoblibException) as e:
-            logger.error(f"Error loading {model_type} model: {str(e)}")
-            models[model_type] = None
-            return None
-        except Exception as e:
-            logger.error(f"Unexpected error loading {model_type} model: {str(e)}")
-            models[model_type] = None
-            return None
-
-
-
-
-
-# API Blueprint
-api = Blueprint('api', __name__)
-@api.route('/auth/request-reset', methods=['POST'])
-@limiter.limit("5 per minute")
-def request_password_reset():
+@app.post('/api/auth/verify-reset')
+@limiter.limit('30 per hour')
+def api_verify_reset():
     try:
-        data = request.get_json(silent=True) or {}
-        email = (data.get('email') or '').strip().lower()
-        if not email:
-            return jsonify({'error': 'Email is required'}), 400
-        # Basic email format check to avoid obvious bad inputs
-        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-            return jsonify({'message': 'If the account exists, a code was sent.'}), 200
-        # Find user
-        resp = supabase.table('users').select('id, username').eq('username', email).limit(1).execute()
-        rows = resp.data or []
-        user = rows[0] if rows else None
-        if not user:
-            # Do not leak existence
-            return jsonify({'message': 'If the account exists, a code was sent.'}), 200
-        # Generate 6-digit code
-        code = f"{random.randint(0, 999999):06d}"
-        # Store reset entry
-        supabase.table('password_resets').insert({
-            'user_id': user['id'],
-            'email': email,
-            'code': code,
-            # explicit 5-min expiry to match validation below
-            'expires_at': (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
-            'requested_at': datetime.now(timezone.utc).isoformat(),
-            'ip_address': get_remote_address(),
-            'user_agent': request.headers.get('User-Agent', '')
-        }).execute()
-        # Send email with the code
-        send_email(
-            to_email=email,
-            subject='Your password reset code',
-            body=f'Your password reset code is: {code}\nThis code expires in 5 minutes.'
-        )
-        logger.info(f"Password reset code generated for {email}")
-        return jsonify({'message': 'If the account exists, a code was sent.'}), 200
+        payload = request.get_json(force=True, silent=True) or {}
+        email = normalize_email(payload.get('email'))
+        code = (payload.get('code') or '').strip()
+
+        if not is_valid_email(email):
+            return jsonify({"error": "Email invalide"}), 400
+        if not re.match(r'^\d{6}$', code):
+            return jsonify({"error": "Code invalide (6 chiffres)"}), 400
+
+        record = get_active_reset_record(email)
+        if not record:
+            return jsonify({"error": "Code invalide ou expiré"}), 400
+
+        if not verify_code(code, record['code_hash']):
+            increment_attempt(record['id'])
+            return jsonify({"error": "Code invalide"}), 400
+
+        return jsonify({"valid": True})
     except Exception as e:
-        logger.error(f"request_password_reset error: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        logger.exception(f"verify-reset: erreur: {e}")
+        return jsonify({"error": "Erreur serveur"}), 500
 
-@api.route('/auth/verify-reset', methods=['POST'])
-@limiter.limit("10 per minute")
-def verify_password_reset_code():
+
+
+@app.post('/api/auth/reset-password')
+@limiter.limit('10 per hour')
+def api_reset_password():
     try:
-        data = request.get_json(silent=True) or {}
-        email = (data.get('email') or '').strip().lower()
-        code = (data.get('code') or '').strip()
-        if not email or not code:
-            return jsonify({'error': 'Email and code are required'}), 400
-        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-            return jsonify({'error': 'Invalid email'}), 400
-        res = supabase.table('password_resets').select('id, email, code, expires_at, used').eq('email', email).eq('code', code).eq('used', False).order('created_at', desc=True).limit(1).execute()
-        entry = (res.data or [None])[0]
-        if not entry:
-            return jsonify({'error': 'Invalid code'}), 400
-        try:
-            expires_at = datetime.fromisoformat(str(entry.get('expires_at')).replace('Z', '+00:00'))
-        except Exception:
-            expires_at = datetime.now(timezone.utc)
-        if datetime.now(timezone.utc) > expires_at:
-            return jsonify({'error': 'Code expired'}), 400
-        return jsonify({'valid': True}), 200
-    except Exception as e:
-        logger.error(f"verify_password_reset_code error: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        payload = request.get_json(force=True, silent=True) or {}
+        email = normalize_email(payload.get('email'))
+        code = (payload.get('code') or '').strip()
+        new_password = payload.get('new_password') or ''
 
-
-
-@api.route('/auth/reset-password', methods=['POST'])
-@limiter.limit("5 per minute")
-def reset_password_with_code():
-    try:
-        data = request.get_json(silent=True) or {}
-        email = (data.get('email') or '').strip().lower()
-        code = (data.get('code') or '').strip()
-        new_password = data.get('new_password') or ''
-        if not email or not code or not new_password:
-            return jsonify({'error': 'Email, code and new_password are required'}), 400
+        if not is_valid_email(email):
+            return jsonify({"error": "Email invalide"}), 400
+        if not re.match(r'^\d{6}$', code):
+            return jsonify({"error": "Code invalide (6 chiffres)"}), 400
         if len(new_password) < 8:
-            return jsonify({'error': 'Password must be at least 8 characters'}), 400
-        # Verify latest valid code (not used, not expired within 5 minutes)
-        res = supabase.table('password_resets').select('id, user_id, email, code, expires_at, used').eq('email', email).eq('code', code).eq('used', False).order('created_at', desc=True).limit(1).execute()
-        entry = (res.data or [None])[0]
-        if not entry:
-            return jsonify({'error': 'Invalid code'}), 400
-        # Check expiry manually if needed
-        try:
-            expires_at = datetime.fromisoformat(str(entry.get('expires_at')).replace('Z', '+00:00'))
-        except Exception:
-            expires_at = datetime.now(timezone.utc)
-        if datetime.now(timezone.utc) > expires_at:
-            return jsonify({'error': 'Code expired'}), 400
-        # Update password
-        salt = bcrypt.gensalt()
-        password_hash = bcrypt.hashpw(new_password.encode('utf-8'), salt).decode('utf-8')
-        supabase.table('users').update({'password_hash': password_hash}).eq('id', entry['user_id']).execute()
-        # Mark code used
-        supabase.table('password_resets').update({'used': True}).eq('id', entry['id']).execute()
-        # Invalidate any other active codes for this email to prevent reuse
-        try:
-            supabase.table('password_resets').update({'used': True}).eq('email', email).eq('used', False).execute()
-        except Exception:
-            pass
-        return jsonify({'message': 'Password updated successfully'}), 200
+            return jsonify({"error": "Mot de passe trop court (min 8 caractères)"}), 400
+
+        user = get_user_by_email(email)
+        if not user:
+            # Réponse générique (ne pas divulguer)
+            time.sleep(0.2)
+            return jsonify({"error": "Code invalide ou expiré"}), 400
+
+        record = get_active_reset_record(email)
+        if not record:
+            return jsonify({"error": "Code invalide ou expiré"}), 400
+
+        if not verify_code(code, record['code_hash']):
+            increment_attempt(record['id'])
+            return jsonify({"error": "Code invalide"}), 400
+
+        # Met à jour le mot de passe utilisateur
+        update_user_password(user['id'], new_password)
+        # Marque le code comme utilisé
+        mark_reset_used(record['id'])
+
+        return jsonify({"message": "Mot de passe réinitialisé avec succès"})
     except Exception as e:
-        logger.error(f"reset_password_with_code error: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        logger.exception(f"reset-password: erreur: {e}")
+        return jsonify({"error": "Erreur serveur"}), 500
 
 # Other routes
 @app.route('/favicon.ico')
