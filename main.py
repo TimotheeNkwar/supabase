@@ -42,6 +42,8 @@ from supabase import create_client, Client
 import smtplib
 from email.message import EmailMessage
 import re
+import logging
+
 
 
 # Configure logging
