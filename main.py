@@ -42,7 +42,10 @@ from supabase import create_client, Client
 import smtplib
 from email.message import EmailMessage
 import re
-
+import secrets
+from datetime import datetime, timedelta, timezone
+import bcrypt
+import logging
 
 # Configure logging
 logging.basicConfig(
@@ -86,46 +89,7 @@ SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')  # Clé de service
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 
-# --- Email helper ---
-class EmailService:
-    def __init__(self):
-        self.host = os.getenv('EMAIL_HOST')
-        self.port = int(os.getenv('EMAIL_PORT'))
-        self.user = os.getenv('EMAIL_USER')
-        self.password = os.getenv('EMAIL_PASS')
-        self.from_email = os.getenv('EMAIL_FROM')
 
-    def send_email(self, to_email: str, subject: str, body: str, is_html: bool = False) -> bool:
-        """Helper function to send plain text emails."""
-        try:
-            if not all([self.host, self.port, self.user, self.password, self.from_email]):
-                logger.warning('Email not sent: SMTP env vars not fully configured')
-                return False
-
-            msg = EmailMessage()
-            msg['Subject'] = subject
-            msg['From'] = self.from_email
-            msg['To'] = to_email
-            if is_html:
-                msg.add_alternative(body, subtype='html')
-            else:
-                msg.set_content(body)
-
-            with smtplib.SMTP(self.host, self.port) as server:
-                server.starttls()
-                server.login(self.user, self.password)
-                server.send_message(msg)
-
-            return True
-        except Exception as e:
-            logger.error(f"Failed to send email to {to_email}: {e}")
-            return False
-
-email_service = EmailService()
-
-def send_email(to_email: str, subject: str, body: str) -> bool:
-    """Helper function to send plain text emails."""
-    return email_service.send_email(to_email, subject, body, is_html=False)
 
 
 @app.route("/robots.txt")
@@ -393,119 +357,244 @@ def load_model(model_type: str) -> Optional[Union[object]]:
 
 
 # API Blueprint
-api = Blueprint('api', __name__)
-@api.route('/auth/request-reset', methods=['POST'])
-@limiter.limit("5 per minute")
-def request_password_reset():
-    try:
-        data = request.get_json(silent=True) or {}
-        email = (data.get('email') or '').strip().lower()
-        if not email:
-            return jsonify({'error': 'Email is required'}), 400
-        # Basic email format check to avoid obvious bad inputs
-        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-            return jsonify({'message': 'If the account exists, a code was sent.'}), 200
-        # Find user
-        resp = supabase.table('users').select('id, username').eq('username', email).limit(1).execute()
-        rows = resp.data or []
-        user = rows[0] if rows else None
-        if not user:
-            # Do not leak existence
-            return jsonify({'message': 'If the account exists, a code was sent.'}), 200
-        # Generate 6-digit code
-        code = f"{random.randint(0, 999999):06d}"
-        # Store reset entry
-        supabase.table('password_resets').insert({
-            'user_id': user['id'],
-            'email': email,
-            'code': code,
-            # explicit 5-min expiry to match validation below
-            'expires_at': (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat(),
-            'requested_at': datetime.now(timezone.utc).isoformat(),
-            'ip_address': get_remote_address(),
-            'user_agent': request.headers.get('User-Agent', '')
-        }).execute()
-        # Send email with the code
-        send_email(
-            to_email=email,
-            subject='Your password reset code',
-            body=f'Your password reset code is: {code}\nThis code expires in 5 minutes.'
+api = Blueprint('api', __name__)# Python
+# --- AJOUTS/MISES À JOUR POUR LE RESET PASSWORD ---
+
+
+
+
+# --- Email helper (compléter la classe) ---
+class EmailService:
+    def __init__(self):
+        self.host = os.getenv('EMAIL_HOST')
+        self.port = int(os.getenv('EMAIL_PORT', '587'))
+        self.user = os.getenv('EMAIL_USER')
+        self.password = os.getenv('EMAIL_PASSWORD')
+        self.from_addr = os.getenv('EMAIL_FROM', self.user or 'no-reply@example.com')
+        self.use_tls = os.getenv('EMAIL_USE_TLS', 'true').lower() == 'true'
+
+    def send_reset_code(self, to_email: str, code: str):
+        # Gabarit d'email simple
+        subject = "Votre code de réinitialisation de mot de passe"
+        text = (
+            f"Bonjour,\n\n"
+            f"Voici votre code de réinitialisation: {code}\n"
+            f"Il expirera dans 15 minutes.\n\n"
+            f"Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.\n"
+            f"Cordialement."
         )
-        logger.info(f"Password reset code generated for {email}")
-        return jsonify({'message': 'If the account exists, a code was sent.'}), 200
-    except Exception as e:
-        logger.error(f"request_password_reset error: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
 
-@api.route('/auth/verify-reset', methods=['POST'])
-@limiter.limit("10 per minute")
-def verify_password_reset_code():
+        msg = EmailMessage()
+        msg['From'] = self.from_addr
+        msg['To'] = to_email
+        msg['Subject'] = subject
+        msg.set_content(text)
+
+        with smtplib.SMTP(self.host, self.port) as smtp:
+            if self.use_tls:
+                smtp.starttls()
+            if self.user and self.password:
+                smtp.login(self.user, self.password)
+            smtp.send_message(msg)
+
+
+email_service = EmailService()
+
+
+# --- Helpers sécurité/validation ---
+
+RESET_CODE_TTL_MINUTES = int(os.getenv('RESET_CODE_TTL_MINUTES', '15'))
+RESET_CODE_LENGTH = int(os.getenv('RESET_CODE_LENGTH', '6'))
+
+def normalize_email(email: str) -> str:
+    return (email or '').strip().lower()
+
+def is_valid_email(email: str) -> bool:
+    # Regex simple, à ajuster selon ton besoin
+    return bool(re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", email or ""))
+
+def generate_reset_code(length: int = RESET_CODE_LENGTH) -> str:
+    if length < 4 or length > 10:
+        length = 6
+    # Code numérique, facile à saisir
+    return f"{secrets.randbelow(10 ** length):0{length}d}"
+
+def hash_code(code: str) -> str:
+    # Hash du code pour ne pas stocker le code en clair
+    return bcrypt.hashpw(code.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_code(code: str, code_hash: str) -> bool:
     try:
-        data = request.get_json(silent=True) or {}
-        email = (data.get('email') or '').strip().lower()
-        code = (data.get('code') or '').strip()
-        if not email or not code:
-            return jsonify({'error': 'Email and code are required'}), 400
-        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-            return jsonify({'error': 'Invalid email'}), 400
-        res = supabase.table('password_resets').select('id, email, code, expires_at, used').eq('email', email).eq('code', code).eq('used', False).order('created_at', desc=True).limit(1).execute()
-        entry = (res.data or [None])[0]
-        if not entry:
-            return jsonify({'error': 'Invalid code'}), 400
-        try:
-            expires_at = datetime.fromisoformat(str(entry.get('expires_at')).replace('Z', '+00:00'))
-        except Exception:
-            expires_at = datetime.now(timezone.utc)
-        if datetime.now(timezone.utc) > expires_at:
-            return jsonify({'error': 'Code expired'}), 400
-        return jsonify({'valid': True}), 200
-    except Exception as e:
-        logger.error(f"verify_password_reset_code error: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+        return bcrypt.checkpw(code.encode('utf-8'), code_hash.encode('utf-8'))
+    except Exception:
+        return False
+
+def utcnow_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+def in_future_iso(minutes: int) -> str:
+    return (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat()
 
 
+# --- Supabase helpers ---
 
-@api.route('/auth/reset-password', methods=['POST'])
-@limiter.limit("5 per minute")
-def reset_password_with_code():
+def get_user_by_email(email: str):
+    # Adapte le nom de table/colonnes si nécessaire
+    resp = supabase.table('users').select('id').eq('email', email).limit(1).execute()
+    data = (resp.data or [])
+    return data[0] if data else None
+
+def delete_existing_reset_records(email: str):
+    supabase.table('password_resets').delete().eq('email', email).eq('used', False).execute()
+
+def insert_reset_record(email: str, code_hash: str, expires_at_iso: str):
+    payload = {
+        "email": email,
+        "code_hash": code_hash,
+        "expires_at": expires_at_iso,
+        "used": False,
+        "attempt_count": 0,
+        "created_at": utcnow_iso(),
+    }
+    supabase.table('password_resets').insert(payload).execute()
+
+def get_active_reset_record(email: str):
+    # Récupère le plus récent non utilisé et non expiré
+    now_iso = utcnow_iso()
+    resp = (
+        supabase.table('password_resets')
+        .select('id,email,code_hash,expires_at,used,attempt_count,created_at')
+        .eq('email', email)
+        .eq('used', False)
+        .gt('expires_at', now_iso)
+        .order('created_at', desc=True)
+        .limit(1)
+        .execute()
+    )
+    data = (resp.data or [])
+    return data[0] if data else None
+
+def mark_reset_used(record_id: str):
+    supabase.table('password_resets').update({"used": True, "used_at": utcnow_iso()}).eq('id', record_id).execute()
+
+def increment_attempt(record_id: str):
+    # Incrémente atomiquement attempt_count (façon simple)
+    resp = supabase.table('password_resets').select('attempt_count').eq('id', record_id).limit(1).execute()
+    cur = ((resp.data or [{}])[0].get('attempt_count') or 0) + 1
+    supabase.table('password_resets').update({"attempt_count": cur}).eq('id', record_id).execute()
+
+def update_user_password(user_id: str, new_password: str):
+    pwd_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    # Adapte la colonne si besoin (ex: "password_hash" ou "password")
+    supabase.table('users').update({"password_hash": pwd_hash, "updated_at": utcnow_iso()}).eq('id', user_id).execute()
+
+
+# --- Rate limiting + routes ---
+
+@app.post('/api/auth/request-reset')
+@limiter.limit('5 per hour')
+def api_request_reset():
     try:
-        data = request.get_json(silent=True) or {}
-        email = (data.get('email') or '').strip().lower()
-        code = (data.get('code') or '').strip()
-        new_password = data.get('new_password') or ''
-        if not email or not code or not new_password:
-            return jsonify({'error': 'Email, code and new_password are required'}), 400
+        payload = request.get_json(force=True, silent=True) or {}
+        email = normalize_email(payload.get('email'))
+        if not is_valid_email(email):
+            return jsonify({"error": "Email invalide"}), 400
+
+        # Vérification utilisateur sans divulguer l'existence
+        user = get_user_by_email(email)
+
+        # Génère et stocke le code uniquement si l'utilisateur existe,
+        # mais répond pareil dans tous les cas pour éviter l'énumération
+        if user:
+            try:
+                delete_existing_reset_records(email)
+                code = generate_reset_code()
+                code_hash = hash_code(code)
+                expires_at = in_future_iso(RESET_CODE_TTL_MINUTES)
+                insert_reset_record(email, code_hash, expires_at)
+
+                # Envoi email
+                email_service.send_reset_code(email, code)
+            except Exception as e:
+                # On loggue l'erreur mais on renvoie quand même un message générique
+                logger.warning(f"request-reset: échec traitement interne pour {email}: {e}")
+
+        # Réponse générique
+        return jsonify({"message": "Si un compte existe pour cet email, un code a été envoyé."})
+    except Exception as e:
+        logger.exception(f"request-reset: erreur: {e}")
+        return jsonify({"error": "Erreur serveur"}), 500
+
+
+@app.post('/api/auth/verify-reset')
+@limiter.limit('30 per hour')
+def api_verify_reset():
+    try:
+        payload = request.get_json(force=True, silent=True) or {}
+        email = normalize_email(payload.get('email'))
+        code = (payload.get('code') or '').strip()
+
+        if not is_valid_email(email):
+            return jsonify({"error": "Email invalide"}), 400
+        if not re.match(r'^\d{6}$', code):
+            return jsonify({"error": "Code invalide (6 chiffres)"}), 400
+
+        record = get_active_reset_record(email)
+        if not record:
+            return jsonify({"error": "Code invalide ou expiré"}), 400
+
+        if not verify_code(code, record['code_hash']):
+            increment_attempt(record['id'])
+            return jsonify({"error": "Code invalide"}), 400
+
+        return jsonify({"valid": True})
+    except Exception as e:
+        logger.exception(f"verify-reset: erreur: {e}")
+        return jsonify({"error": "Erreur serveur"}), 500
+
+
+@app.post('/api/auth/reset-password')
+@limiter.limit('10 per hour')
+def api_reset_password():
+    try:
+        payload = request.get_json(force=True, silent=True) or {}
+        email = normalize_email(payload.get('email'))
+        code = (payload.get('code') or '').strip()
+        new_password = payload.get('new_password') or ''
+
+        if not is_valid_email(email):
+            return jsonify({"error": "Email invalide"}), 400
+        if not re.match(r'^\d{6}$', code):
+            return jsonify({"error": "Code invalide (6 chiffres)"}), 400
         if len(new_password) < 8:
-            return jsonify({'error': 'Password must be at least 8 characters'}), 400
-        # Verify latest valid code (not used, not expired within 5 minutes)
-        res = supabase.table('password_resets').select('id, user_id, email, code, expires_at, used').eq('email', email).eq('code', code).eq('used', False).order('created_at', desc=True).limit(1).execute()
-        entry = (res.data or [None])[0]
-        if not entry:
-            return jsonify({'error': 'Invalid code'}), 400
-        # Check expiry manually if needed
-        try:
-            expires_at = datetime.fromisoformat(str(entry.get('expires_at')).replace('Z', '+00:00'))
-        except Exception:
-            expires_at = datetime.now(timezone.utc)
-        if datetime.now(timezone.utc) > expires_at:
-            return jsonify({'error': 'Code expired'}), 400
-        # Update password
-        salt = bcrypt.gensalt()
-        password_hash = bcrypt.hashpw(new_password.encode('utf-8'), salt).decode('utf-8')
-        supabase.table('users').update({'password_hash': password_hash}).eq('id', entry['user_id']).execute()
-        # Mark code used
-        supabase.table('password_resets').update({'used': True}).eq('id', entry['id']).execute()
-        # Invalidate any other active codes for this email to prevent reuse
-        try:
-            supabase.table('password_resets').update({'used': True}).eq('email', email).eq('used', False).execute()
-        except Exception:
-            pass
-        return jsonify({'message': 'Password updated successfully'}), 200
-    except Exception as e:
-        logger.error(f"reset_password_with_code error: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+            return jsonify({"error": "Mot de passe trop court (min 8 caractères)"}), 400
 
-# Other routes
+        user = get_user_by_email(email)
+        if not user:
+            # Réponse générique (ne pas divulguer)
+            time.sleep(0.2)
+            return jsonify({"error": "Code invalide ou expiré"}), 400
+
+        record = get_active_reset_record(email)
+        if not record:
+            return jsonify({"error": "Code invalide ou expiré"}), 400
+
+        if not verify_code(code, record['code_hash']):
+            increment_attempt(record['id'])
+            return jsonify({"error": "Code invalide"}), 400
+
+        # Met à jour le mot de passe utilisateur
+        update_user_password(user['id'], new_password)
+        # Marque le code comme utilisé
+        mark_reset_used(record['id'])
+
+        return jsonify({"message": "Mot de passe réinitialisé avec succès"})
+    except Exception as e:
+        logger.exception(f"reset-password: erreur: {e}")
+        return jsonify({"error": "Erreur serveur"}), 500
+    
+
+
 @app.route('/favicon.ico')
 def favicon():
 
