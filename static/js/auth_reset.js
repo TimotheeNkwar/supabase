@@ -26,7 +26,7 @@ async function resetPassword(email, code, newPassword) {
     })
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Erreur réinitialisation');
+  if (!res.ok) throw new Error(data.error || 'Reset error');
   return data;
 }
 
@@ -39,7 +39,7 @@ async function verifyResetCode(email, code) {
     body: JSON.stringify({ email: String(email).trim().toLowerCase(), code: String(code).trim() })
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Vérification échouée');
+  if (!res.ok) throw new Error(data.error || 'Verification failed');
   return data; // { valid: true }
 }
 
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
       requestMsg.textContent = '';
       try {
         const data = await requestPasswordReset(emailInput.value);
-        requestMsg.textContent = data.message || 'Code envoyé (si le compte existe)';
+        requestMsg.textContent = data.message || 'Code sent (if account exists)';
       } catch (err) {
         requestMsg.textContent = err.message || 'Erreur réseau';
         return;
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const effectiveEmail = (sessionStorage.getItem('resetEmail') || emailInput.value);
         const data = await resetPassword(effectiveEmail, codeEl.value, passEl.value);
-        resetMsg.textContent = data.message || 'Mot de passe mis à jour';
+        resetMsg.textContent = data.message || 'Password updated';
       } catch (err) {
         resetMsg.textContent = err.message || 'Erreur réseau';
       }

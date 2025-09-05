@@ -392,10 +392,6 @@ def load_model(model_type: str) -> Optional[Union[object]]:
 
 
 
-
-
-
-
 # API Blueprint
 api = Blueprint('api', __name__)
 @api.route('/auth/request-reset', methods=['POST'])
