@@ -7,15 +7,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let posts = Array.from(document.querySelectorAll('.post-card'));
     let visiblePostsCount = 3; // Start with first 3 in Featured Insights
 
-    // Initialize: Show first 3 posts in Recent Articles
+    // Initialize: Show all posts
     function initializePosts() {
-        posts.forEach((post, index) => {
-            post.classList.add('hidden');
-            if (index >= 3 && index < visiblePostsCount + 3) {
-                post.classList.remove('hidden');
-            }
+        posts.forEach((post) => {
+            post.classList.remove('hidden');
         });
-        updateLoadMoreButton();
+        loadMoreButton.style.display = 'none'; // Hide load more button
     }
 
     // Search functionality
@@ -36,12 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Sort functionality
     sortSelect.addEventListener('change', () => {
-        filterAndSortPosts(searchInput.value.toLowerCase(), getActiveFilter(), sortSelect.value);
-    });
-
-    // Load More functionality
-    loadMoreButton.addEventListener('click', () => {
-        visiblePostsCount += 3;
         filterAndSortPosts(searchInput.value.toLowerCase(), getActiveFilter(), sortSelect.value);
     });
 
@@ -84,35 +75,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Update grid
+        // Update grid - show all filtered posts
         postsGrid.innerHTML = '';
         const allPosts = [...document.querySelectorAll('#featured-posts .post-card'), ...filteredPosts];
         allPosts.forEach((post, index) => {
-            if (index < 3 || index < visiblePostsCount + 3) {
-                post.classList.remove('hidden');
-            } else {
-                post.classList.add('hidden');
-            }
+            post.classList.remove('hidden');
             if (index >= 3) {
                 postsGrid.appendChild(post);
             }
         });
-
-        updateLoadMoreButton();
+        
+        // Hide load more button since we're showing all posts
+        loadMoreButton.style.display = 'none';
     }
 
-    // Update Load More button visibility
+    // Update Load More button visibility (not used but kept for compatibility)
     function updateLoadMoreButton() {
-        const totalPosts = posts.filter(post => {
-            const title = post.querySelector('h3').textContent.toLowerCase();
-            const description = post.querySelector('p').textContent.toLowerCase();
-            const category = post.getAttribute('data-category');
-            const query = searchInput.value.toLowerCase();
-            const filter = getActiveFilter();
-            return (title.includes(query) || description.includes(query)) &&
-                   (filter === 'all' || category === filter);
-        }).length;
-        loadMoreButton.style.display = visiblePostsCount + 3 >= totalPosts ? 'none' : 'inline-flex';
+        loadMoreButton.style.display = 'none';
     }
 
     // Mobile menu toggle
