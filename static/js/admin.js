@@ -11,9 +11,46 @@
       this.perPage = API_CONFIG.perPage;
       this.initSocket();
       this.bindElements();
+      this.initDarkMode();
       this.attachEvents();
       this.loadCategories();
       this.loadArticles(1);
+    }
+
+    initDarkMode() {
+      // Check for saved user preference, if any, on load
+      if (localStorage.getItem('darkMode') === 'true' || 
+          (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      
+      // Update the toggle button state
+      this.updateDarkModeToggle();
+    }
+    
+    toggleDarkMode() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('darkMode', isDark);
+      this.updateDarkModeToggle();
+    }
+    
+    updateDarkModeToggle() {
+      const darkModeToggle = document.getElementById('dark-mode-toggle');
+      if (!darkModeToggle) return;
+      
+      const isDark = document.documentElement.classList.contains('dark');
+      const moonIcon = darkModeToggle.querySelector('.fa-moon');
+      const sunIcon = darkModeToggle.querySelector('.fa-sun');
+      
+      if (isDark) {
+        moonIcon.classList.add('hidden');
+        sunIcon.classList.remove('hidden');
+      } else {
+        moonIcon.classList.remove('hidden');
+        sunIcon.classList.add('hidden');
+      }
     }
 
     initSocket() {
@@ -84,6 +121,13 @@
     }
 
     attachEvents() {
+      // Dark mode toggle
+      const darkModeToggle = document.getElementById('dark-mode-toggle');
+      if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', () => this.toggleDarkMode());
+      }
+      
+      // Pagination
       if (this.prevBtn) this.prevBtn.addEventListener('click', () => {
         if (currentPage > 1) this.loadArticles(currentPage - 1);
       });
