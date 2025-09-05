@@ -1,31 +1,56 @@
 /* Modern Admin Panel */
 :root {
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-dark: #1e40af;
   --danger: #ef4444;
   --danger-hover: #dc2626;
   --success: #10b981;
   --warning: #f59e0b;
-  --bg-primary: #f8fafc;
+  --bg-primary: #f9fafb;
   --bg-secondary: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --border: #e2e8f0;
-  --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --border: #e5e7eb;
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
   --radius: 0.5rem;
-  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: all 0.2s ease;
+  
+  /* Dark mode colors */
+  --dark-bg-primary: #111827;
+  --dark-bg-secondary: #1f2937;
+  --dark-text-primary: #f9fafb;
+  --dark-text-secondary: #d1d5db;
+  --dark-border: #374151;
+  --dark-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Dark mode styles */
+.dark {
+  --bg-primary: var(--dark-bg-primary);
+  --bg-secondary: var(--dark-bg-secondary);
+  --text-primary: var(--dark-text-primary);
+  --text-secondary: var(--dark-text-secondary);
+  --border: var(--dark-border);
+  --shadow: var(--dark-shadow);
+  color: var(--text-primary);
+}
+
+/* Smooth transition for dark mode */
+html {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Base Styles */
 * { box-sizing: border-box; }
-body { 
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
 
 /* Layout */
 .admin-container {
@@ -53,9 +78,13 @@ body {
   transition: var(--transition);
   border: 1px solid var(--border);
   margin-bottom: 1.5rem;
+  color: var(--text-primary);
 }
 
-
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.1);
+}
 
 /* Buttons */
 .btn {
