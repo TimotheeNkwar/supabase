@@ -1074,15 +1074,22 @@ def update_article(article_id):
 def delete_article(article_id):
     try:
         if str(article_id).isdigit():
-            result = supabase.table('articles').delete().eq('uuid', article_id).execute()
-        elif is_valid_uuid(article_id):
-            result = supabase.table('articles').delete().eq('uuid', article_id).execute()
-        else:
+            # First get the article to ensure it exists and get its UUID
+            article = supabase.table('articles').select('uuid').eq('id', int(article_id)).execute()
+            if not article.data:
+                return jsonify({'error': 'Article not found'}), 404
+            article_id = article.data[0]['uuid']
+        elif not is_valid_uuid(article_id):
             return jsonify({'error': 'Invalid article identifier'}), 400
+            
+        # Delete by UUID
+        result = supabase.table('articles').delete().eq('uuid', article_id).execute()
+        
         if not result.data:
             return jsonify({'error': 'Article not found'}), 404
+            
         socketio.emit('article_deleted', {'articleId': article_id, 'uuid': article_id})
-        return jsonify({'message': 'Article deleted'}), 200
+        return jsonify({'message': 'Article deleted', 'id': article_id}), 200
     except Exception as e:
         logger.error(f"Error deleting article {article_id}: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
