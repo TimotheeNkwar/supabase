@@ -49,6 +49,7 @@ import bcrypt
 import logging
 from dotenv import load_dotenv
 
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -868,11 +869,19 @@ def show_article(id):
         logger.error(f"Error rendering article {id}: {str(e)}")
         return render_template('404.html', message="Article not found"), 404
 
-# Configuration MongoDB pour la collection pricing_analyses
+# Configuration MongoDB
+MONGO_URI = os.getenv('MONGO_URI')
+if not MONGO_URI:
+    logger.error("MongoDB Atlas URI not found")
+    raise ValueError("MongoDB Atlas URI not configured")
+
 try:
     client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-    db = client['analyticsDB']
-    pricing_analyses_collection = db['pricing_analyses']  # Nouvelle collection pour les analyses de tarification
+    db = client['moviesDB']
+    pricing_analyses_collection = db['pricing_analyses']
+    sentiment_analyses_collection = db['sentiment_analyses']
+    user_searches_collection = db['user_searches']
+    churn_predictions_collection = db['churn_predictions']   # Nouvelle collection pour les analyses de tarification
     client.admin.command('ping')  # Test connection
     logger.info("MongoDB connected successfully")
 except Exception as e:
@@ -892,6 +901,7 @@ try:
 except Exception as e:
     logger.error(f"Failed to configure Gemini API: {e}")
     raise
+
 
 
 # Paramètres des catégories (à définir globalement)
@@ -1185,8 +1195,6 @@ def predict():
     except Exception as e:
         logger.error(f"Unexpected error in predict: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
-
-
 
 
 
