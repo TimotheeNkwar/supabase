@@ -320,7 +320,7 @@
       this.modalTitle.textContent = article.id ? "Modifier l'article" : "Nouvel article";
       this.fieldId.value = article.id || '';
       this.fieldTitle.value = article.title || '';
-      this.fieldCategory.value = article.category || 'technologie';
+      this.fieldCategory.value = article.category || 'technology';
       this.fieldDescription.value = article.description || '';
       this.fieldContent.value = article.content || '';
       this.fieldTags.value = Array.isArray(article.tags) ? article.tags.join(', ') : (article.tags || '');
