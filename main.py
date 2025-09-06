@@ -47,144 +47,6 @@ import secrets
 from datetime import datetime, timedelta, timezone
 import bcrypt
 import logging
-from functools import wraps
-from flask import jsonify, request
-
-
-
-
-
-
-
-
-
-
-# Chemin du fichier JSON pour les erreurs
-ERROR_LOG_FILE = os.path.join(os.path.dirname(__file__), 'errors_log.json')
-# Verrou pour éviter les conflits d'écriture
-file_lock = Lock()
-
-def track_error(error_name: str, error_location: str, resolution: str, error_details: str, ip_address: str, input_data: dict = None):
-    """
-    Enregistre une erreur dans un fichier JSON local et logge dans la console.
-    
-    Args:
-        error_name: Nom de l'erreur (ex. ValueError, TypeError).
-        error_location: Où l'erreur s'est produite (ex. nom de la route ou fonction).
-        resolution: Conseil pour résoudre l'erreur.
-        error_details: Message détaillé de l'erreur.
-        ip_address: Adresse IP du client.
-        input_data: Données d'entrée (optionnel, pour debugging).
-    """
-    try:
-        tz, local_time = get_local_time_from_ip(ip_address)
-        error_doc = {
-            'error_name': error_name,
-            'error_location': error_location,
-            'resolution': resolution,
-            'details': error_details,
-            'input_data': input_data or {},
-            'timestamp': local_time,
-            'ip_address': ip_address,
-            'timezone': tz
-        }
-        # Écrire dans le fichier JSON avec verrou
-        with file_lock:
-            # Si le fichier existe, lire son contenu
-            if os.path.exists(ERROR_LOG_FILE):
-                with open(ERROR_LOG_FILE, 'r', encoding='utf-8') as f:
-                    try:
-                        errors = json.load(f)
-                    except json.JSONDecodeError:
-                        errors = []
-            else:
-                errors = []
-            # Ajouter la nouvelle erreur
-            errors.append(error_doc)
-            # Écrire dans le fichier
-            with open(ERROR_LOG_FILE, 'w', encoding='utf-8') as f:
-                json.dump(errors, f, indent=2, ensure_ascii=False)
-        logger.error(f"Tracked error in {ERROR_LOG_FILE}: {error_doc}")
-    except Exception as track_e:
-        logger.exception(f"Failed to track error in JSON file: {track_e}")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def handle_errors(func):
-    """
-    Décorateur pour capturer et tracker les erreurs dans les routes Flask.
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except ValueError as ve:
-            error_name = type(ve).__name__
-            error_location = f"Route: {func.__name__}"
-            resolution = "Vérifiez les données d'entrée fournies (ex. format, type, valeurs manquantes)."
-            error_details = str(ve)
-            track_error(error_name, error_location, resolution, error_details, get_client_ip(request), request.get_json(silent=True))
-            return jsonify({
-                'error_name': error_name,
-                'error_location': error_location,
-                'resolution': resolution,
-                'details': error_details
-            }), 400
-        except TimeoutError as te:
-            error_name = type(te).__name__
-            error_location = f"Route: {func.__name__}"
-            resolution = "Le délai d'attente a été dépassé. Réessayez plus tard ou vérifiez votre connexion."
-            error_details = str(te)
-            track_error(error_name, error_location, resolution, error_details, get_client_ip(request), request.get_json(silent=True))
-            return jsonify({
-                'error_name': error_name,
-                'error_location': error_location,
-                'resolution': resolution,
-                'details': error_details
-            }), 504
-        except KeyError as ke:
-            error_name = type(ke).__name__
-            error_location = f"Route: {func.__name__}"
-            resolution = "Vérifiez que toutes les clés requises sont présentes dans les données envoyées."
-            error_details = str(ke)
-            track_error(error_name, error_location, resolution, error_details, get_client_ip(request), request.get_json(silent=True))
-            return jsonify({
-                'error_name': error_name,
-                'error_location': error_location,
-                'resolution': resolution,
-                'details': error_details
-            }), 400
-        except Exception as e:
-            error_name = type(e).__name__
-            error_location = f"Route: {func.__name__}"
-            resolution = "Erreur inattendue. Contactez le support technique ou vérifiez les logs pour plus de détails."
-            error_details = str(e)
-            track_error(error_name, error_location, resolution, error_details, get_client_ip(request), request.get_json(silent=True))
-            return jsonify({
-                'error_name': error_name,
-                'error_location': error_location,
-                'resolution': resolution,
-                'details': error_details
-            }), 500
-    return wrapper
-
-
-
-
-
-
 
 # Configure logging
 logging.basicConfig(
@@ -232,7 +94,6 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 
 @app.route("/robots.txt")
-@handle_errors
 def robots():
     
 
@@ -365,7 +226,6 @@ def get_local_time_from_ip(ip):
 
 
 @app.route('/python-demo', methods=['GET'])
-@handle_errors
 def python_demo():
     """
     Render the Python Demo page with an interactive code example.
@@ -501,21 +361,6 @@ def load_model(model_type: str) -> Optional[Union[object]]:
 api = Blueprint('api', __name__)# Python
 # --- AJOUTS/MISES À JOUR POUR LE RESET PASSWORD ---
 
-@app.errorhandler(Exception)
-def handle_error(e):
-    code = getattr(e, 'code', 500)
-    error_name = type(e).__name__
-    error_location = "Erreur globale (non capturée par une route spécifique)"
-    resolution = "Erreur inattendue. Vérifiez les logs ou contactez le support technique."
-    error_details = str(e)
-    track_error(error_name, error_location, resolution, error_details, get_client_ip(request), request.get_json(silent=True))
-    return jsonify({
-        'error_name': error_name,
-        'error_location': error_location,
-        'resolution': resolution,
-        'details': error_details
-    }), code
-
 
 
 
@@ -649,7 +494,6 @@ def update_user_password(user_id: str, new_password: str):
 
 @app.post('/api/auth/request-reset')
 @limiter.limit('5 per hour')
-@handle_errors
 def api_request_reset():
     try:
         payload = request.get_json(force=True, silent=True) or {}
@@ -685,7 +529,6 @@ def api_request_reset():
 
 @app.post('/api/auth/verify-reset')
 @limiter.limit('30 per hour')
-@handle_errors
 def api_verify_reset():
     try:
         payload = request.get_json(force=True, silent=True) or {}
@@ -2174,6 +2017,7 @@ def recommend_movies():
     except Exception as e:
         logger.error(f"Error in movie recommendation: {e}", exc_info=True)
         return jsonify({'error': 'Internal server error'}), 500
+
 
 
 @app.route('/api/track-view/<article_id>', methods=['POST'])
