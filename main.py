@@ -1099,7 +1099,7 @@ def create_article():
             'tags': tags,
             'image': data.get('image', ''),
             'read_time': int(data.get('read_time') or 5),
-            'content': data.get('content_html', ''),
+            'content': data.get('content', ''),
             'created_by': current_user.id,
             'hidden': bool(data.get('hidden', False)),
             'views': int(data.get('views') or 0),
