@@ -359,7 +359,7 @@
       const id = this.fieldId.value;
       const payload = {
         title: this.fieldTitle.value?.trim() || '',
-        category: this.fieldCategory.value?.trim() || 'technology, supply-chain,t utorials, analysis, career,methodology',
+        category: this.fieldCategory.value?.trim() || 'technology, supply-chain,t tutorials, analysis, career,methodology',
         description: this.fieldDescription.value || '',
         content: this.fieldContent.value || '',
         tags: (this.fieldTags.value || '').split(',').map(t => t.trim()).filter(Boolean),
