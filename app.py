@@ -740,6 +740,54 @@ def favicon():
         logger.warning(f"Favicon not found: {str(e)}")
         return render_template('404.html', message="Favicon not found"), 404
 
+@api.route('/articles/<article_id>/toggle-visibility', methods=['POST'])
+@limiter.limit("5 per minute")
+@login_required
+def toggle_article_visibility(article_id):
+    try:
+        data = request.get_json(silent=True) or {}
+        hidden = data.get('hidden', False)
+        if str(article_id).isdigit():
+            result = supabase.table('articles').update({'hidden': hidden}).eq('id', int(article_id)).execute()
+        elif is_valid_uuid(article_id):
+            result = supabase.table('articles').update({'hidden': hidden}).eq('uuid', article_id).execute()
+        else:
+            return jsonify({'error': 'Invalid article identifier'}), 400
+        if not result.data:
+            return jsonify({'error': 'Article not found'}), 404
+
+        socketio.emit('article_visibility_changed', {'articleId': article_id, 'uuid': article_id, 'hidden': hidden})
+        return jsonify({'message': 'Visibility toggled'}), 200
+    except Exception as e:
+        logger.error(f"Error toggling visibility for article {article_id}: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+@api.route('/articles/<article_id>', methods=['DELETE'])
+@limiter.limit("5 per minute")
+@login_required
+def delete_article(article_id):
+    try:
+        if str(article_id).isdigit():
+            # First get the article to ensure it exists and get its UUID
+            article = supabase.table('articles').select('uuid').eq('id', int(article_id)).execute()
+            if not article.data:
+                return jsonify({'error': 'Article not found'}), 404
+            article_id = article.data[0]['uuid']
+        elif not is_valid_uuid(article_id):
+            return jsonify({'error': 'Invalid article identifier'}), 400
+            
+        # Delete by UUID
+        result = supabase.table('articles').delete().eq('uuid', article_id).execute()
+        
+        if not result.data:
+            return jsonify({'error': 'Article not found'}), 404
+            
+        socketio.emit('article_deleted', {'articleId': article_id, 'uuid': article_id})
+        return jsonify({'message': 'Article deleted', 'id': article_id}), 200
+    except Exception as e:
+        logger.error(f"Error deleting article {article_id}: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 
@@ -801,8 +849,148 @@ def show_page(page):
         return render_template('500.html', message=str(e)), 500
 
 
+@api.route('/articles/<article_id>', methods=['PUT'])
+@limiter.limit("5 per minute")
+@login_required
+def update_article(article_id):
+    try:
+        data = request.get_json(silent=True) or {}
+        updates = {'updated_by': current_user.id, 'updated_at': datetime.now(timezone.utc).isoformat()}
+        if 'title' in data:
+            title = (data.get('title') or '').strip()
+            if not title:
+                return jsonify({'error': 'Title cannot be empty'}), 400
+            updates['title'] = title
+        if 'category' in data:
+            updates['category'] = (data.get('category') or 'uncategorized').strip()
+        if 'description' in data:
+            updates['description'] = data.get('description', '')
+        if 'tags' in data:
+            tv = data.get('tags', [])
+            if isinstance(tv, list):
+                updates['tags'] = ','.join([str(tag).strip() for tag in tv if str(tag).strip()])
+            else:
+                updates['tags'] = str(tv or '')
+        if 'image' in data:
+            updates['image'] = data.get('image', '')
+        if 'read_time' in data:
+            try:
+                updates['read_time'] = int(data.get('read_time') or 5)
+            except Exception:
+                updates['read_time'] = 5
+        if 'content' in data:
+            updates['content'] = data.get('content', '')
+        if 'hidden' in data:
+            updates['hidden'] = bool(data.get('hidden'))
+        if 'views' in data:
+            try:
+                updates['views'] = int(data.get('views'))
+            except Exception:
+                pass
 
+        # Update selecting by numeric id first when applicable, else by valid uuid
+        if str(article_id).isdigit():
+            result = supabase.table('articles').update(updates).eq('id', int(article_id)).execute()
+        elif is_valid_uuid(article_id):
+            result = supabase.table('articles').update(updates).eq('uuid', article_id).execute()
+        else:
+            return jsonify({'error': 'Invalid article identifier'}), 400
+        if not result.data:
+            return jsonify({'error': 'Article not found'}), 404
+        updated = (result.data or [{}])[0]
+        socketio.emit('article_updated', {'article': {'id': article_id, 'uuid': article_id}})
+        return jsonify({'article': updated}), 200
+    except Exception as e:
+        logger.error(f"Error updating article {article_id}: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+    
+@api.route('/articles', methods=['POST'])
+@limiter.limit("5 per minute")
+@login_required
+def create_article():
+    try:
+        data = request.get_json(silent=True) or {}
+        title = (data.get('title') or '').strip()
+        if not title:
+            return jsonify({'error': 'Title is required'}), 400
+        article_id = str(uuid.uuid4())
+        tags_value = data.get('tags', [])
+        if isinstance(tags_value, list):
+            tags = ','.join([str(tag).strip() for tag in tags_value if str(tag).strip()])
+        else:
+            tags = str(tags_value or '')
+        payload = {
+            'uuid': article_id,
+            'title': title or 'Untitled Article',
+            'category': (data.get('category') or 'uncategorized').strip(),
+            'description': data.get('description', ''),
+            'tags': tags,
+            'image': data.get('image', ''),
+            'read_time': int(data.get('read_time') or 5),
+            'content': data.get('content', ''),
+            'created_by': current_user.id,
+            'hidden': bool(data.get('hidden', False)),
+            'views': int(data.get('views') or 0),
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+        result = supabase.table('articles').insert(payload).execute()
+        created = (result.data or [{}])[0]
+        socketio.emit('article_updated', {'article': {'id': article_id, 'uuid': article_id}})
+        return jsonify({'article': created}), 201
+    except Exception as e:
+        logger.error(f"Error creating article: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
+@api.route('/articles/<article_id>', methods=['GET'])
+def get_article(article_id):
+    """Get an article by its ID or UUID.
+
+    Args:
+        article_id (str): The numeric ID or UUID of the article to fetch.
+
+    Returns:
+        A JSON object containing the article's data, or a 404 error if the article is not found.
+    """
+    try:
+        # First try to find by numeric ID if the input is a number
+        if article_id.isdigit():
+            response = supabase.table('articles').select(
+                'id, uuid, title, category, hidden, description, tags, image, read_time, content'
+            ).eq('id', int(article_id)).execute()
+            
+            if response.data and len(response.data) > 0:
+                article = response.data[0]
+            else:
+                # If not found by numeric ID, try UUID
+                response = supabase.table('articles').select(
+                    'id, uuid, title, category, hidden, description, tags, image, read_time, content'
+                ).eq('uuid', article_id).execute()
+                article = response.data[0] if response.data and len(response.data) > 0 else None
+        else:
+            # Try UUID directly if input is not a number
+            response = supabase.table('articles').select(
+                'id, uuid, title, category, hidden, description, tags, image, read_time, content'
+            ).eq('uuid', article_id).execute()
+            article = response.data[0] if response.data and len(response.data) > 0 else None
+
+        if not article:
+            return jsonify({'error': 'Article not found'}), 404
+            
+        return jsonify({
+            'id': article.get('uuid') or str(article.get('id')),
+            'title': article.get('title'),
+            'category': article.get('category'),
+            'hidden': article.get('hidden'),
+            'description': article.get('description'),
+            'tags': article.get('tags', '').split(',') if article.get('tags') else [],
+            'image': article.get('image'),
+            'read_time': article.get('read_time'),
+            'content': article.get('content')
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error fetching article {article_id}: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/article/<id>')
 def show_article(id):
@@ -868,6 +1056,92 @@ def show_article(id):
     except Exception as e:
         logger.error(f"Error rendering article {id}: {str(e)}")
         return render_template('404.html', message="Article not found"), 404
+
+
+
+@app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('show_page', page='homepage'))
+    if request.method == 'POST':
+        username = bleach.clean(request.form.get('username', ''))
+        password = request.form.get('password', '')
+        remember = request.form.get('remember') == 'on'  # <-- Ajouté
+
+        if not username or not password:
+            flash('Username and password are required.', 'error')
+            return redirect(url_for('login'))
+        try:
+            response = supabase.table('users').select('id, username, password_hash').eq('username', username).eq('is_active', True).single().execute()
+            user = response.data
+            if user and bcrypt.checkpw(password.encode('utf-8'), user['password_hash'].encode('utf-8')):
+                user_obj = User(id=user['id'], username=user['username'])
+                login_user(user_obj, remember=remember)  # <-- Ajouté ici
+                supabase.table('users').update({'last_login': datetime.now(timezone.utc).isoformat()}).eq('id', user['id']).execute()
+                flash('Login successful!', 'success')
+                return redirect(url_for('admin'))
+            else:
+                flash('Invalid username or password.', 'error')
+        except Exception as e:
+            logger.error(f"Login error: {e}")
+            flash('Login failed.', 'error')
+    return render_template('login.html')
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        # Ici, tu dois vérifier si l'email existe, générer un token, envoyer un email, etc.
+        # Pour la démo, on affiche juste un message
+        flash('If this email exists, a reset link has been sent.', 'success')
+        return redirect(url_for('login'))
+    return render_template('forgot_password.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('login'))
+
+
+
+@app.route('/upload_file', methods=['POST'])
+@login_required
+@limiter.limit("5 per minute")
+def upload_file():
+    """
+    Upload a file to the server. The file is saved in the
+    `UPLOAD_FOLDER` directory and the filename is returned in the
+    response.
+
+    The endpoint is rate-limited to 5 requests per minute to prevent
+    abuse.
+
+    :return: A JSON response with the filename and URL of the uploaded file.
+    """
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        file.save(file_path)
+        logger.info(f"File uploaded: {file_path}")
+        # Optionally, you can store file metadata in Supabase if you want to track uploads:
+        # supabase.table('uploads').insert({
+        #     'filename': filename,
+        #     'user_id': current_user.id,
+        #     'uploaded_at': datetime.now(timezone.utc).isoformat()
+        # }).execute()
+        return jsonify({'filename': filename, 'url': url_for('static', filename=f'Uploads/{filename}')})
+    return jsonify({'error': 'File type not allowed'}),
+
+
 
 # Configuration MongoDB
 MONGO_URI = os.getenv('MONGO_URI')
