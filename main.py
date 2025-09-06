@@ -1990,7 +1990,6 @@ def recommend_movies():
                 'score': min(float(doc.get('score', 0)) * 100, 100)
             } for doc in results
         ]
-        # Récupérer IP & timezone locale
         # Récupérer IP & heure locale exacte
         ip_address = get_remote_address()
         tz, local_time = get_local_time_from_ip(ip_address)
