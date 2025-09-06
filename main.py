@@ -618,7 +618,7 @@ def favicon():
 
 
 
-@app.route('/', defaults={'page': 'front'}, methods=['GET', 'POST'])
+@app.route('/', defaults={'page': 'homepage'}, methods=['GET', 'POST'])
 @app.route('/<page>', methods=['GET', 'POST'])
 def show_page(page):
 
