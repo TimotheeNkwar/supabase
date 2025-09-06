@@ -639,7 +639,7 @@ def show_page(page):
     :rtype: flask.Response
     """
 
-    valid_pages = {'front','homepage', 'case_studies', 'about', 'skills_tools', 'blog_insights', 'contact_collaboration'}
+    valid_pages = {'homepage', 'case_studies', 'about', 'skills_tools', 'blog_insights', 'contact_collaboration'}
     if page not in valid_pages:
         logger.warning(f"Page not found: {page}")
         return render_template('404.html'), 404
