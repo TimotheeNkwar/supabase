@@ -321,6 +321,16 @@
       this.fieldId.value = article.id || '';
       this.fieldTitle.value = article.title || '';
       this.fieldCategory.value = article.category || 'technology';
+      this.fieldCategory.value = article.category || 'trends';
+      this.fieldCategory.value = article.category || 'business';
+      this.fieldCategory.value = article.category || 'career';
+      this.fieldCategory.value = article.category || 'supply-chain';
+      this.fieldCategory.value = article.category || 'healthcare';
+      this.fieldCategory.value = article.category || 'tutorials';
+      this.fieldCategory.value = article.category || 'environment';
+      this.fieldCategory.value = article.category || 'sustainability';
+      this.fieldCategory.value = article.category || 'methodology';
+      this.fieldCategory.value = article.category || 'analysis';
       this.fieldDescription.value = article.description || '';
       this.fieldContent.value = article.content || '';
       this.fieldTags.value = Array.isArray(article.tags) ? article.tags.join(', ') : (article.tags || '');
