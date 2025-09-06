@@ -716,7 +716,7 @@ def show_article(id):
             'tags': article.get('tags', '').split(',') if article.get('tags') else [],
             'image': article.get('image', 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg'),
             'read_time': int(article.get('read_time', 5)) if str(article.get('read_time', 5)).isdigit() else 5,
-            'content': article.get('content', ''),
+            'content': article.get('content_md', ''),
             'views': article.get('views', 0),
             'timestamp': article.get('timestamp', datetime.now(pytz.timezone('Asia/Nicosia')))
         }
@@ -1099,7 +1099,7 @@ def create_article():
             'tags': tags,
             'image': data.get('image', ''),
             'read_time': int(data.get('read_time') or 5),
-            'content': data.get('content', ''),
+            'content': data.get('content_html', ''),
             'created_by': current_user.id,
             'hidden': bool(data.get('hidden', False)),
             'views': int(data.get('views') or 0),
