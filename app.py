@@ -941,6 +941,114 @@ def create_article():
         logger.error(f"Error creating article: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
+
+
+
+
+
+
+
+@api.route('/articles', methods=['GET'])
+def get_articles():
+
+    """
+    GET /articles
+    Fetches articles
+
+    Parameters:
+    page (int): Page number
+    per_page (int): Number of articles per page
+    category (string): Article category
+    status (string): Article status: visible, hidden or all
+
+    Returns:
+    {
+        "articles": [
+            {
+                "id": string,
+                "title": string,
+                "category": string,
+                "hidden": boolean,
+                "description": string,
+                "tags": [
+                    string
+                ],
+                "image": string,
+                "read_time": int,
+                "timestamp": string,
+                "views": int
+            }
+        ],
+        "total": int,
+        "pages": int
+    }
+    """
+    try:
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 5))
+        category = bleach.clean(request.args.get('category', ''))
+        status = request.args.get('status', 'all')
+
+        # --- SUPABASE IMPLEMENTATION ---
+        query = supabase.table('articles').select('*')
+        if status == 'visible':
+            query = query.eq('hidden', False)
+        elif status == 'hidden':
+            query = query.eq('hidden', True)
+        # else: no filter on hidden
+
+        if category:
+            query = query.eq('category', category)
+
+        start = (page - 1) * per_page
+        end = start + per_page - 1
+        query = query.order('timestamp', desc=True).range(start, end)
+        response = query.execute()
+        articles = response.data or []
+
+        # Get total count
+        count_query = supabase.table('articles').select('id', count='exact')
+        if category:
+            count_query = count_query.eq('category', category)
+        if status == 'visible':
+            count_query = count_query.eq('hidden', False)
+        elif status == 'hidden':
+            count_query = count_query.eq('hidden', True)
+        total = count_query.execute().count or 0
+
+        return jsonify({
+            'articles': [
+                {
+                    'id': article.get('uuid') or article.get('id'),
+                    'title': article.get('title'),
+                    'category': article.get('category'),
+                    'hidden': article.get('hidden'),
+                    'description': article.get('description'),
+                    'tags': article.get('tags', '').split(',') if article.get('tags') else [],
+                    'image': article.get('image'),
+                    'read_time': article.get('read_time'),
+                    'timestamp': article.get('timestamp').isoformat() if isinstance(article.get('timestamp'), (datetime,)) else article.get('timestamp'),
+                    'views': article.get('views')
+                } for article in articles
+            ],
+            'total': total,
+            'pages': (total + per_page - 1) // per_page
+        }), 200
+    except Exception as e:
+        logger.error(f"Error fetching articles: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+
+
+
+
+
+
+
+
+
+
 @api.route('/articles/<article_id>', methods=['GET'])
 def get_article(article_id):
     """Get an article by its ID or UUID.
