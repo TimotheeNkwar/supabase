@@ -320,7 +320,7 @@
       this.modalTitle.textContent = article.id ? "Modifier l'article" : "Nouvel article";
       this.fieldId.value = article.id || '';
       this.fieldTitle.value = article.title || '';
-      this.fieldCategory.value = article.category || 'technologie';
+      this.fieldCategory.value = article.category || 'technology, supply-chain,t utorials, analysis, career,methodology';
       this.fieldDescription.value = article.description || '';
       this.fieldContent.value = article.content || '';
       this.fieldTags.value = Array.isArray(article.tags) ? article.tags.join(', ') : (article.tags || '');
@@ -359,7 +359,7 @@
       const id = this.fieldId.value;
       const payload = {
         title: this.fieldTitle.value?.trim() || '',
-        category: this.fieldCategory.value?.trim() || 'technology',
+        category: this.fieldCategory.value?.trim() || 'technology, supply-chain,t utorials, analysis, career,methodology',
         description: this.fieldDescription.value || '',
         content: this.fieldContent.value || '',
         tags: (this.fieldTags.value || '').split(',').map(t => t.trim()).filter(Boolean),
