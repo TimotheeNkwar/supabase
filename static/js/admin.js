@@ -53,23 +53,6 @@
       }
     }
 
-    // 1) À placer à l'intérieur de la classe ArticleManager
-    // -----------------------------------------------------
-
-    // Numéro de ligne global (tient compte de la page et du perPage)
-    getRowNumber(indexInPage) {
-      // indexInPage commence à 0 pour la première ligne de la page
-      return (currentPage - 1) * this.perPage + indexInPage + 1;
-    }
-
-    // Récupération robuste du nombre de vues selon le schéma de l’API
-    getArticleViews(article) {
-      if (typeof article?.views === 'number') return article.views;
-      if (typeof article?.viewCount === 'number') return article.viewCount;
-      if (typeof article?.stats?.views === 'number') return article.stats.views;
-      return 0;
-    }
-
     initSocket() {
       try {
         if (typeof io === 'undefined') {
@@ -195,17 +178,9 @@
     }
 
     async loadArticles(page = 1) {
-      currentPage = page;
-
-      const params = new URLSearchParams({
-        page: String(page),
-        per_page: String(this.perPage),
-      });
-
-      if (this.filterCategory?.value) {
-        params.set('category', this.filterCategory.value);
-      }
-      params.set('status', this.filterStatus?.value || 'all');
+      const category = this.filterCategory?.value || '';
+      const status = this.filterStatus?.value || 'all';
+      const search = this.searchInput?.value || '';
 
       const qs = new URLSearchParams({
         page,
@@ -257,11 +232,10 @@
         return;
       }
 
-      list.forEach((article, i) => {
+      list.forEach(article => {
         const tr = document.createElement('tr');
         tr.className = 'border-b hover:bg-gray-50';
         tr.innerHTML = `
-          <td class="text-center">${this.getRowNumber(i)}</td>
           <td class="p-3">${this.escapeHtml(article.title || '—')}</td>
           <td class="p-3">${this.escapeHtml(article.category || '—')}</td>
           <td class="p-3">
@@ -269,7 +243,6 @@
               ${article.hidden ? 'Hide' : 'Visible'}
             </span>
           </td>
-          <td class="text-right">${Number(this.getArticleViews(article)).toLocaleString()}</td>
           <td class="p-3">
             <div class="flex gap-2">
               <button class="btn btn-sm btn-primary" data-action="edit" data-id="${this.escapeHtml(article.id)}">Edit</button>
@@ -525,61 +498,6 @@
       div.textContent = message;
       this.toastContainer.appendChild(div);
       if (autoHide || timeout) setTimeout(() => div.remove(), timeout);
-    }
-  }
-
-  // 1) À ajouter dans la classe ArticleManager (méthodes utilitaires)
-  getRowNumber(indexInPage) {
-    // indexInPage commence à 0 pour la 1ère ligne de la page
-    return (currentPage - 1) * this.perPage + indexInPage + 1;
-  }
-
-  getArticleViews(article) {
-    return Number.isFinite(article?.views) ? article.views : 0;
-  }
-
-  // 2) Dans loadArticles(page), assurez-vous d’envoyer per_page dans la requête
-  // (exemple d’assemblage de l’URL — adaptez au code existant si besoin)
-async loadArticles(page = 1) {
-    currentPage = page;
-
-    const params = new URLSearchParams({
-      page: String(page),
-      per_page: String(this.perPage),
-    });
-
-    if (this.filterCategory?.value) {
-      params.set('category', this.filterCategory.value);
-    }
-    params.set('status', this.filterStatus?.value || 'all');
-
-    const res = await fetch(`${API_CONFIG.baseUrl}?${params.toString()}`);
-    if (!res.ok) {
-      console.error('Erreur lors du chargement des articles');
-      return;
-    }
-    const data = await res.json();
-    const articles = data?.articles || [];
-
-    // 3) Lors du rendu des lignes, insérez les deux cellules Number et Views.
-    // Placez la cellule "Number" en tout début de ligne et "Views" à l’endroit souhaité.
-    this.tableBody.innerHTML = articles.map((a, i) => `
-      <tr data-id="${a.id}">
-        <td class="text-center">${this.getRowNumber(i)}</td>
-        <!-- ... vos cellules existantes: titre, catégorie, statut, etc. ... -->
-        <td class="text-right">${Number(this.getArticleViews(a)).toLocaleString()}</td>
-      </tr>
-    `).join('');
-
-    // Mettez à jour la pagination si nécessaire (exploitez data.total et data.pages)
-    if (this.pageInfo) {
-      this.pageInfo.textContent = `Page ${currentPage} / ${data.pages || 1}`;
-    }
-    if (this.prevBtn) {
-      this.prevBtn.disabled = currentPage <= 1;
-    }
-    if (this.nextBtn) {
-      this.nextBtn.disabled = currentPage >= (data.pages || 1);
     }
   }
 
