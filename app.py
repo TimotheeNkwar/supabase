@@ -1042,6 +1042,49 @@ def get_articles():
 
 
 
+@app.route('/')
+def index():
+    """\
+    Render the homepage with 3 most recent articles.
+
+    Fetch 3 most recent articles from the database, and render the homepage
+    with them. If there is an error fetching the articles, fall back to static
+    sample data from articles_metadata.json.
+    """
+
+    conn = None
+    try:
+        response = supabase.table('articles').select('*').eq('hidden', False).order('timestamp', desc=True).limit(3).execute()
+        articles = response.data or []
+        for article in articles:
+            article['tags'] = article.get('tags', '').split(',') if article.get('tags') else []
+            if isinstance(article.get('timestamp'), str):
+                article['timestamp'] = article['timestamp']
+            elif article.get('timestamp'):
+                article['timestamp'] = str(article['timestamp'])
+        return render_template('index.html', articles=articles)  # Fixed to index.html
+    except Exception as e:
+        logger.error(f"Error fetching articles: {e}")
+        articles = [
+            {
+                'id': str(idx + 1),  # Map article_id_X to integer (e.g., article_id_0 -> 1)
+                'uuid': f"article_id_{idx}",  # Fallback UUID
+                'title': article_data['title'],
+                'description': article_data['description'],
+                'category': article_data.get('category', 'Uncategorized'),
+                'tags': article_data['tags'],
+                'image': article_data['image'],
+                'read_time': article_data['read_time'],
+                'timestamp': article_data.get('timestamp', datetime.now(pytz.timezone('Asia/Nicosia')).strftime("%B %d, %Y %H:%M:%S")),
+                'views': 0
+            } for idx, (article_id, article_data) in enumerate(list(articles_metadata.items())[:3])
+        ]
+        return render_template('index.html', articles=articles)
+    finally:
+        if conn:
+            conn.close()
+
+
 
 
 
